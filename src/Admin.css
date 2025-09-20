@@ -1,0 +1,225 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+:root {
+  --bg-primary: #0F172A; --bg-secondary: #1E293B; --bg-tertiary: #334155;
+  --text-primary: #E2E8F0; --text-secondary: #94A3B8;
+  --accent-primary: #F43F5E; --accent-primary-hover: #E11D48;
+  --font-family: 'Inter', sans-serif;
+}
+html, body, #root { height: 100%; width: 100%; margin: 0; padding: 0; }
+body { background-color: var(--bg-primary); font-family: var(--font-family); color: var(--text-primary); }
+.login-container { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 1rem; }
+.login-box { width: 100%; max-width: 400px; padding: 1.5rem 2.5rem; background-color: var(--bg-secondary); border-radius: 1.5rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); text-align: center; }
+.login-box .logo-container { display: flex; justify-content: center; margin-bottom: 1rem; color: var(--accent-primary); }
+.login-box h2 { font-size: 1.875rem; font-weight: 700; margin: 0 0 0.5rem 0; }
+.login-box p { color: var(--text-secondary); margin: 0 0 2rem 0; }
+.login-form .form-group { margin-bottom: 1.5rem; text-align: left; }
+.login-form label { display: block; font-size: 0.875rem; font-weight: 500; color: var(--text-secondary); margin-bottom: 0.5rem; }
+.login-form input { width: 100%; padding: 0.8rem 1rem; background-color: var(--bg-primary); border: 1px solid var(--bg-tertiary); border-radius: 0.5rem; color: var(--text-primary); font-size: 1rem; box-sizing: border-box; transition: border-color 0.2s, box-shadow 0.2s; }
+.login-form input:focus { outline: none; border-color: var(--accent-primary); box-shadow: 0 0 0 2px rgba(244, 63, 94, 0.4); }
+.login-form .error-message { color: #F87171; font-size: 0.875rem; margin-top: 1rem; }
+.btn-login { width: 100%; padding: 0.8rem 1rem; font-size: 1rem; font-weight: 600; color: white; background-color: var(--accent-primary); border: none; border-radius: 0.5rem; cursor: pointer; transition: background-color 0.3s; }
+.btn-login:hover { background-color: var(--accent-primary-hover); }
+.admin-layout { display: flex; height: 100vh; width: 100vw; }
+.sidebar { position: fixed; top: 0; left: 0; height: 100%; background-color: var(--bg-secondary); display: flex; flex-direction: column; transition: width 0.3s ease; width: 256px; z-index: 10;}
+.sidebar.collapsed { width: 80px; }
+.sidebar-header { display: flex; align-items: center; height: 80px; padding: 0 1.5rem; border-bottom: 1px solid var(--bg-tertiary); color: var(--accent-primary); flex-shrink: 0; overflow: hidden; }
+.sidebar.collapsed .sidebar-header { justify-content: center; padding: 0; }
+.sidebar-header .logo-text { margin-left: 0.75rem; font-size: 1.25rem; font-weight: 700; color: var(--text-primary); }
+.sidebar-nav { flex-grow: 1; padding: 1rem; display: flex; flex-direction: column; gap: 0.5rem; }
+.nav-item { display: flex; align-items: center; padding: 0.8rem 1rem; border-radius: 0.5rem; color: var(--text-secondary); text-decoration: none; font-weight: 500; transition: background-color 0.2s, color 0.2s; overflow: hidden; white-space: nowrap; }
+.nav-item:hover { background-color: var(--bg-tertiary); color: var(--text-primary); }
+.nav-item.active { background-color: var(--accent-primary); color: white; }
+.nav-item .nav-text { margin-left: 1rem; }
+.sidebar-footer { padding: 1rem; border-top: 1px solid var(--bg-tertiary); }
+.sidebar-toggle { position: absolute; top: 5rem; right: -12px; background-color: var(--bg-tertiary); border: 1px solid #475569; color: var(--text-primary); border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.main-content { flex-grow: 1; display: flex; flex-direction: column; transition: margin-left 0.3s ease; margin-left: 256px; width: calc(100% - 256px); }
+.main-content.collapsed { margin-left: 80px; width: calc(100% - 80px); }
+.main-header { display: flex; justify-content: space-between; align-items: center; height: 80px; padding: 0 2rem; background-color: rgba(30, 41, 59, 0.5); backdrop-filter: blur(5px); border-bottom: 1px solid var(--bg-tertiary); flex-shrink: 0; }
+.main-header h1 { font-size: 1.5rem; font-weight: 600; }
+.page-content { flex-grow: 1; padding: 2rem; overflow-y: auto; }
+.dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; }
+.summary-card { background-color: var(--bg-secondary); padding: 1.5rem; border-radius: 0.75rem; }
+.summary-card h3 { margin: 0 0 0.5rem 0; color: var(--text-secondary); font-size: 0.875rem; font-weight: 500; }
+.summary-card p { margin: 0; font-size: 2rem; font-weight: 700; }
+.charts-grid { margin-top: 2rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 2rem; }
+.chart-container { background-color: var(--bg-secondary); padding: 1.5rem; border-radius: 0.75rem; }
+.chart-container h3 { margin: 0 0 1rem 0; font-weight: 600; }
+.content-box { background-color: var(--bg-secondary); border-radius: 0.75rem; }
+.content-box-header { display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; border-bottom: 1px solid var(--bg-tertiary); }
+.content-box-header h2 { margin: 0; font-size: 1.25rem; font-weight: 600; }
+.btn-primary { padding: 0.6rem 1rem; background-color: var(--accent-primary); color: white; border: none; border-radius: 0.5rem; cursor: pointer; font-weight: 500; transition: background-color 0.2s; display: inline-flex; align-items: center; justify-content: center; }
+.btn-primary:hover { background-color: var(--accent-primary-hover); }
+.table-container { padding: 1.5rem; overflow-x: auto; }
+.data-table { width: 100%; border-collapse: collapse; text-align: left; }
+.data-table th, .data-table td { padding: 1rem; border-bottom: 1px solid var(--bg-tertiary); }
+.data-table th { color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase; font-weight: 600; }
+.data-table tbody tr:hover { background-color: rgba(51, 65, 85, 0.5); }
+.action-buttons button { background: none; border: none; cursor: pointer; font-weight: 500; margin-right: 1rem; }
+.action-buttons .btn-edit { color: #38BDF8; } .action-buttons .btn-edit:hover { color: #7DD3FC; }
+.action-buttons .btn-delete { color: #F87171; } .action-buttons .btn-delete:hover { color: #FCA5A5; }
+.product-form { padding: 1.5rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+.form-group { display: flex; flex-direction: column; }
+.form-group label { margin-bottom: 0.5rem; font-weight: 500; color: var(--text-secondary); }
+.form-group input, .form-group textarea, .form-group select { background-color: var(--bg-primary); border: 1px solid var(--bg-tertiary); border-radius: 0.5rem; padding: 0.7rem 1rem; color: var(--text-primary); font-size: 1rem; }
+.form-group input:focus, .form-group textarea:focus, .form-group select:focus { outline: none; border-color: var(--accent-primary); }
+.form-group.category-group { display: flex; flex-direction: row; align-items: center; gap: 0.5rem; }
+.category-group select { flex-grow: 1; }
+.btn-new-category { padding: 0.7rem; background-color: var(--bg-tertiary); color: var(--text-primary); border: none; border-radius: 0.5rem; cursor: pointer; display: flex; align-items: center; gap: 0.3rem; }
+.btn-back { background: none; border: none; color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; font-size: 1rem; }
+.form-actions { grid-column: 1 / -1; text-align: right; }
+.btn-primary:disabled { background-color: var(--bg-tertiary); cursor: not-allowed; }
+
+/* === Me CSS tika src/Admin.css file eke pahalatama danna === */
+
+.filters-container {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+.filters-container input[type="date"] {
+    background-color: var(--bg-primary);
+    border: 1px solid var(--bg-tertiary);
+    border-radius: 0.5rem;
+    padding: 0.5rem;
+    color: var(--text-primary);
+}
+
+.tabs-container {
+    padding: 0 1.5rem;
+    border-bottom: 1px solid var(--bg-tertiary);
+    display: flex;
+    gap: 1rem;
+}
+.tab-button {
+    padding: 1rem 0.5rem;
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-weight: 500;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: color 0.2s, border-color 0.2s;
+}
+.tab-button:hover {
+    color: var(--text-primary);
+}
+.tab-button.active {
+    color: var(--accent-primary);
+    border-bottom-color: var(--accent-primary);
+}
+.btn-view {
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: none;
+    border-radius: 0.3rem;
+    padding: 0.4rem 0.8rem;
+    cursor: pointer;
+}
+
+/* --- Modal Styles --- */
+.modal-backdrop {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+.modal-content {
+    background-color: var(--bg-secondary);
+    border-radius: 0.75rem;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+    animation: slide-down 0.3s ease-out;
+}
+.modal-header {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--bg-tertiary);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.modal-header h2 { margin: 0; }
+.modal-close { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-secondary); }
+.modal-body { padding: 1.5rem; }
+.modal-body p { margin: 0 0 1rem 0; }
+.payment-slip-img { max-width: 100%; border-radius: 0.5rem; margin-top: 0.5rem; border: 1px solid var(--bg-tertiary); }
+.modal-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--bg-tertiary);
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+}
+.modal-footer button {
+    padding: 0.6rem 1.2rem;
+    border: none;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+.btn-approve { background-color: #22C55E; color: white; }
+.btn-decline { background-color: #EF4444; color: white; }
+
+.status-badge {
+    padding: 0.2rem 0.6rem;
+    border-radius: 1rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: capitalize;
+}
+.status-badge.status-pending { background-color: #F59E0B; color: #422006; }
+.status-badge.status-approved { background-color: #22C55E; color: #064E3B; }
+.status-badge.status-declined { background-color: #EF4444; color: #7F1D1D; }
+
+@keyframes slide-down { from { transform: translateY(-30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+/* ME CSS TIKA src/Admin.css FILE EKE PAHALATAMA DANA */
+.modal-footer {
+    align-items: center;
+}
+.status-select {
+    background-color: var(--bg-primary);
+    border: 1px solid var(--bg-tertiary);
+    border-radius: 0.5rem;
+    padding: 0.6rem;
+    color: var(--text-primary);
+    margin-right: auto; /* Push to the left */
+}
+.btn-update {
+    background-color: #3B82F6; /* blue-500 */
+    color: white;
+}
+
+/* === Me CSS tika src/Admin.css file eke pahalatama danna === */
+/* Dashboard Styles */
+.dashboard-content { display: flex; flex-direction: column; gap: 1.5rem; }
+.dashboard-header { display: flex; justify-content: space-between; align-items: center; }
+.dashboard-header .filters-container { display: flex; gap: 0.5rem; }
+.dashboard-header .filters-container button { background-color: var(--bg-secondary); border: 1px solid var(--bg-tertiary); color: var(--text-secondary); padding: 0.5rem 1rem; border-radius: 20px; cursor: pointer; }
+.dashboard-header .filters-container button.active { background-color: var(--accent-primary); color: white; border-color: var(--accent-primary); }
+.summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; }
+.summary-card { background-color: var(--bg-secondary); border-radius: 0.75rem; padding: 1.5rem; display: flex; align-items: center; gap: 1rem; }
+.summary-card svg { width: 32px; height: 32px; flex-shrink: 0; }
+.summary-card div span { font-size: 0.9rem; color: var(--text-secondary); }
+.summary-card div strong { display: block; font-size: 1.75rem; }
+
+/* Pagination Styles */
+.pagination { display: flex; justify-content: center; align-items: center; gap: 0.5rem; padding: 1.5rem; }
+.pagination button { background-color: var(--bg-tertiary); border: none; color: var(--text-primary); padding: 0.5rem 1rem; border-radius: 5px; cursor: pointer; }
+.pagination button:disabled { opacity: 0.5; cursor: not-allowed; }
+.pagination button.active { background-color: var(--accent-primary); }
+
+/* === Me CSS tika Admin.css eke pahalatama danna === */
+.login-logo {
+    height: 275px;
+    width: auto;
+    margin-bottom: -5rem;
+}
+.sidebar-logo {
+    height: 180px;
+    width: auto;
+}
