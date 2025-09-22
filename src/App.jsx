@@ -1,52 +1,74 @@
-// src/App.jsx
+// src/App.jsx (COMPLETE & CORRECTED)
 
 import React, { useState } from 'react';
 import './Admin.css';
+
+// Import Pages & Components
 import LoginPage from './pages/LoginPage';
 import Sidebar from './components/Sidebar';
 import DashboardPage from './pages/DashboardPage';
 import ProductPage from './pages/ProductPage';
-import OrderPage from './pages/OrderPage';
+import DeliveryRequestsPage from './pages/DeliveryRequestsPage'; // <-- IMPORTED
+import CategoriesPage from './pages/CategoriesPage';             // <-- IMPORTED
 import RiderPage from './pages/RiderPage';
-import ParcelPage from './pages/ParcelPage';
 import AdminPage from './pages/AdminPage';
+import ParcelPage from './pages/ParcelPage';
 
+
+// Header component
 const Header = ({ title }) => (<header className="main-header"><h1>{title}</h1></header>);
 
-const AdminLayout = ({ children, activePage, setActivePage, isCollapsed, setIsCollapsed, onLogout }) => (
-    <div className="admin-layout">
-        <Sidebar activePage={activePage} setActivePage={setActivePage} isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} onLogout={onLogout} />
-        <div className={`main-content ${isCollapsed ? 'collapsed' : ''}`}>
-            <Header title={activePage} />
-            <main className="page-content">{children}</main>
-        </div>
-    </div>
-);
-
+// This component decides which page to show
 const PageRenderer = ({ pageName }) => {
     switch (pageName) {
-        case 'Dashboard': return <DashboardPage />;
-        case 'Products': return <ProductPage />;
-        case 'Orders': return <OrderPage />;
-        case 'Riders': return <RiderPage />;
-        case 'Parcels': return <ParcelPage />;
-        case 'Admins': return <AdminPage />;
-        default: return <DashboardPage />;
+        case 'Dashboard': 
+            return <DashboardPage />;
+        case 'Products': 
+            return <ProductPage />;
+        case 'Delivery Requests': 
+            return <DeliveryRequestsPage />; // <-- ADDED BACK
+        case 'Categories': 
+            return <CategoriesPage />;       // <-- ADDED BACK
+        case 'Riders': 
+            return <RiderPage />;
+        case 'Parcels': 
+            return <ParcelPage />;
+        case 'Admins': 
+            return <AdminPage />;
+        default: 
+            return <DashboardPage />;
     }
 };
 
+// Main App component
 function App() {
-    const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [isLoggedIn, setIsLoggedIn] = useState(true);
     const [activePage, setActivePage] = useState('Dashboard');
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+    
     const handleLogout = () => { setIsLoggedIn(false); };
 
-    if (!isLoggedIn) { return <LoginPage onLogin={() => setIsLoggedIn(true)} />; }
+    if (!isLoggedIn) { 
+        return <LoginPage onLogin={() => setIsLoggedIn(true)} />; 
+    }
 
     return (
-        <AdminLayout activePage={activePage} setActivePage={setActivePage} isCollapsed={isSidebarCollapsed} setIsCollapsed={setIsSidebarCollapsed} onLogout={handleLogout}>
-            <PageRenderer pageName={activePage} />
-        </AdminLayout>
+        <div className="admin-layout">
+            <Sidebar 
+                activePage={activePage} 
+                setActivePage={setActivePage} 
+                isCollapsed={isSidebarCollapsed} 
+                setIsSidebarCollapsed={setIsSidebarCollapsed} 
+                onLogout={handleLogout} 
+            />
+            <div className={`main-content ${isSidebarCollapsed ? 'collapsed' : ''}`}>
+                <Header title={activePage} />
+                <main className="page-content">
+                    <PageRenderer pageName={activePage} />
+                </main>
+            </div>
+        </div>
     );
 }
+
 export default App;

@@ -1,90 +1,120 @@
+// src/pages/ProductPage.jsx (NEW CODE TO MATCH YOUR FORM)
+
 import React, { useState, useEffect, useCallback } from 'react';
 import sanityClient from '../sanityClient';
-import { PlusCircle, ArrowLeft } from 'lucide-react';
+import { PlusCircle, ArrowLeft, Trash2, Edit } from 'lucide-react';
 
-// === Product Form Component ===
+// Helper to get image URL from Sanity asset reference
+const getImageUrl = (imageRef) => {
+    if (!imageRef?.asset?._ref) return 'https://via.placeholder.com/100';
+    const ref = imageRef.asset._ref;
+    const parts = ref.split('-');
+    const [asset, assetId, dimensions, format] = parts;
+    const projectId = sanityClient.config().projectId;
+    const dataset = sanityClient.config().dataset;
+    return `https://cdn.sanity.io/images/${projectId}/${dataset}/${assetId}-${dimensions}.${format}`;
+};
+
+// --- Product Form Component ---
 const ProductForm = ({ onBack, onSave, productToEdit }) => {
-    const [formData, setFormData] = useState({ name: '', category: '', price: '', shortDescription: '', rating: '', googleDriveLink: '', envatoMediaLink: '' });
-    const [images, setImages] = useState([]);
-    const [video, setVideo] = useState(null);
+    const [formData, setFormData] = useState({
+        name: '',
+        price: '',
+        rating: '',
+        shortDescription: '',
+        googleDriveLink: '',
+        envatoPreviewLink: ''
+    });
+    const [category, setCategory] = useState('');
+    const [imageFile, setImageFile] = useState(null);
+    const [videoFile, setVideoFile] = useState(null);
     const [categories, setCategories] = useState([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
-        sanityClient.fetch('*[_type == "category"]{_id, name}').then(setCategories).catch(console.error);
+        sanityClient.fetch(`*[_type == "category"]{_id, name} | order(name asc)`).then(setCategories);
+        
         if (productToEdit) {
             setFormData({
-                name: productToEdit.name || '', category: productToEdit.category?._ref || '',
-                price: productToEdit.price || '', shortDescription: productToEdit.shortDescription || '',
-                rating: productToEdit.rating || '', googleDriveLink: productToEdit.googleDriveLink || '',
-                envatoMediaLink: productToEdit.envatoMediaLink || '',
+                name: productToEdit.name || '',
+                price: productToEdit.price || '',
+                rating: productToEdit.rating || '',
+                shortDescription: productToEdit.shortDescription || '',
+                googleDriveLink: productToEdit.googleDriveLink || '',
+                envatoPreviewLink: productToEdit.envatoPreviewLink || ''
             });
+            setCategory(productToEdit.category?._ref || '');
         }
     }, [productToEdit]);
 
-    // WENAS KAMA: Me functions tika component eka athulata gaththa
-    const handleInputChange = (e) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
-    };
+    const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+    const handleImageChange = (e) => setImageFile(e.target.files[0]);
+    const handleVideoChange = (e) => setVideoFile(e.target.files[0]);
 
-    const handleFileChange = (e) => {
-        if (e.target.name === 'images') setImages([...e.target.files]);
-        if (e.target.name === 'video') setVideo(e.target.files[0]);
-    };
-    
-    const handleNewCategory = async () => {
-        const newCategoryName = prompt("Enter new category name:");
-        if (newCategoryName) {
-            const slug = newCategoryName.toLowerCase().replace(/\s+/g, '-').slice(0, 95);
-            const newCategoryDoc = { _type: 'category', name: newCategoryName, slug: { _type: 'slug', current: slug } };
-            const createdCategory = await sanityClient.create(newCategoryDoc);
-            setCategories(prev => [...prev, createdCategory]);
-            setFormData(prev => ({ ...prev, category: createdCategory._id }));
-            alert(`Category "${newCategoryName}" created and selected!`);
-        }
-    };
-    
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (isSubmitting) return;
         setIsSubmitting(true);
-        // ... (Submit logic eka kalin wage ma thiyenawa, wenasak nehe) ...
+
         try {
-            const imageAssets = images.length > 0 ? await Promise.all(images.map(img => sanityClient.assets.upload('image', img))) : null;
-            let videoAsset = video ? await sanityClient.assets.upload('file', video) : null;
-            const doc = { _type: 'product', name: formData.name, slug: { _type: 'slug', current: formData.name.toLowerCase().replace(/\s+/g, '-') }, price: Number(formData.price), rating: Number(formData.rating), shortDescription: formData.shortDescription, googleDriveLink: formData.googleDriveLink, envatoMediaLink: formData.envatoMediaLink, category: { _type: 'reference', _ref: formData.category },};
-            if (imageAssets) { doc.images = imageAssets.map(asset => ({ _type: 'image', asset: { _type: 'reference', _ref: asset._id } })); }
-            if (videoAsset) { doc.video = { _type: 'file', asset: { _type: 'reference', _ref: videoAsset._id } }; }
-            if (productToEdit) { await sanityClient.patch(productToEdit._id).set(doc).commit(); alert('Product updated successfully!'); } 
-            else { await sanityClient.create(doc); alert('Product created successfully!'); }
-            onSave(); onBack();
-        } catch (error) { console.error("Error saving product:", error); alert('Failed to save product.'); } 
-        finally { setIsSubmitting(false); }
+            let imageAsset, videoAsset;
+            // Upload files if new ones are selected
+            if (imageFile) {
+                imageAsset = await sanityClient.assets.upload('image', imageFile);
+            }
+            if (videoFile) {
+                videoAsset = await sanityClient.assets.upload('file', videoFile, { contentType: videoFile.type, filename: videoFile.name });
+            }
+
+            const doc = {
+                _type: 'product',
+                name: formData.name,
+                slug: { _type: 'slug', current: formData.name.toLowerCase().replace(/\s+/g, '-').slice(0, 95) },
+                price: parseFloat(formData.price),
+                rating: parseFloat(formData.rating),
+                shortDescription: formData.shortDescription,
+                category: { _type: 'reference', _ref: category },
+                googleDriveLink: formData.googleDriveLink,
+                envatoPreviewLink: formData.envatoPreviewLink
+            };
+
+            if (imageAsset) doc.image = { _type: 'image', asset: { _type: 'reference', _ref: imageAsset._id } };
+            if (videoAsset) doc.video = { _type: 'file', asset: { _type: 'reference', _ref: videoAsset._id } };
+
+            if (productToEdit) {
+                await sanityClient.patch(productToEdit._id).set(doc).commit();
+                alert('Product updated successfully!');
+            } else {
+                await sanityClient.create(doc);
+                alert('Product created successfully!');
+            }
+
+            onSave();
+            onBack();
+        } catch (error) {
+            console.error("Failed to save product:", error);
+            alert(`Failed to save product. Check if the 'product' schema in Sanity is correct. Error: ${error.message}`);
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
         <div className="content-box">
             <div className="content-box-header">
-                <button className="btn-back" onClick={onBack}><ArrowLeft size={16} style={{marginRight: '8px'}} /> Back to List</button>
+                <button className="btn-back" onClick={onBack}><ArrowLeft size={16}/> Back to List</button>
                 <h2>{productToEdit ? 'Edit Product' : 'Add New Product'}</h2>
             </div>
             <form className="product-form" onSubmit={handleSubmit}>
-                <div className="form-group"><label>Product Name</label><input type="text" name="name" value={formData.name} onChange={handleInputChange} required /></div>
-                <div className="form-group"><label>Price (Rs.)</label><input type="number" name="price" value={formData.price} onChange={handleInputChange} required /></div>
-                <div className="form-group category-group">
-                    <label>Category</label>
-                    <select name="category" value={formData.category} onChange={handleInputChange} required>
-                        <option value="" disabled>Select a category</option>
-                        {categories.map(cat => <option key={cat._id} value={cat._id}>{cat.name}</option>)}
-                    </select>
-                    <button type="button" className="btn-new-category" onClick={handleNewCategory}><PlusCircle size={16}/> New</button>
-                </div>
-                <div className="form-group"><label>Rating (1-5)</label><input type="number" name="rating" min="1" max="5" value={formData.rating} onChange={handleInputChange} /></div>
-                <div className="form-group"><label>Short Description</label><textarea name="shortDescription" rows="3" value={formData.shortDescription} onChange={handleInputChange}></textarea></div>
-                <div className="form-group"><label>Product Images (Re-upload to change)</label><input type="file" name="images" multiple accept="image/*" onChange={handleFileChange} /></div>
-                <div className="form-group"><label>Product Video (Re-upload to change)</label><input type="file" name="video" accept="video/*" onChange={handleFileChange} /></div>
-                <div className="form-group"><label>Google Drive Link</label><input type="url" name="googleDriveLink" value={formData.googleDriveLink} onChange={handleInputChange} required /></div>
-                <div className="form-group"><label>Envato Preview Link</label><input type="url" name="envatoMediaLink" value={formData.envatoMediaLink} onChange={handleInputChange} /></div>
+                <div className="form-group"><label>Product Name</label><input type="text" name="name" value={formData.name} onChange={handleChange} required /></div>
+                <div className="form-group"><label>Price (Rs.)</label><input type="number" name="price" value={formData.price} onChange={handleChange} required /></div>
+                <div className="form-group"><label>Category</label><select value={category} onChange={(e) => setCategory(e.target.value)} required><option value="" disabled>Select a category</option>{categories.map(cat => <option key={cat._id} value={cat._id}>{cat.name}</option>)}</select></div>
+                <div className="form-group"><label>Rating (1-5)</label><input type="number" name="rating" min="1" max="5" step="0.1" value={formData.rating} onChange={handleChange} /></div>
+                <div className="form-group full-width"><label>Short Description</label><textarea name="shortDescription" rows="3" value={formData.shortDescription} onChange={handleChange}></textarea></div>
+                <div className="form-group"><label>Product Images (Re-upload to change)</label><input type="file" accept="image/*" onChange={handleImageChange} /></div>
+                <div className="form-group"><label>Product Video (Re-upload to change)</label><input type="file" accept="video/*" onChange={handleVideoChange} /></div>
+                <div className="form-group"><label>Google Drive Link</label><input type="url" name="googleDriveLink" value={formData.googleDriveLink} onChange={handleChange} /></div>
+                <div className="form-group"><label>Envato Preview Link</label><input type="url" name="envatoPreviewLink" value={formData.envatoPreviewLink} onChange={handleChange} /></div>
                 <div className="form-actions"><button type="submit" className="btn-primary" disabled={isSubmitting}>{isSubmitting ? 'Saving...' : 'Save Product'}</button></div>
             </form>
         </div>
@@ -92,20 +122,40 @@ const ProductForm = ({ onBack, onSave, productToEdit }) => {
 };
 
 
-// === Product Page (Main Component) ===
+// --- Main Products Page Component (Shows list and handles switching to form) ---
 export default function ProductPage() {
-    // ... Me component eke code eka kalin wage ma thiyenawa, wenasak nehe ...
     const [view, setView] = useState('list');
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [productToEdit, setProductToEdit] = useState(null);
-    const fetchProducts = useCallback(() => { setLoading(true); sanityClient.fetch('*[_type == "product"]{ ..., "category": category->{_ref, name} }').then(data => { setProducts(data); setLoading(false); }).catch(console.error); }, []);
-    useEffect(() => { fetchProducts(); }, [fetchProducts]);
+
+    const fetchProducts = useCallback(() => {
+        setLoading(true);
+        sanityClient.fetch(`*[_type == "product"]{ ..., "categoryName": category->name } | order(_createdAt desc)`)
+            .then(data => { setLoading(false); setProducts(data); })
+            .catch(console.error);
+    }, []);
+
+    useEffect(fetchProducts, [fetchProducts]);
+
     const handleEdit = (product) => { setProductToEdit(product); setView('form'); };
-    const handleDelete = async (productId) => { if (window.confirm('Are you sure?')) { try { await sanityClient.delete(productId); alert('Product deleted!'); fetchProducts(); } catch (error) { console.error('Error deleting:', error); alert('Failed to delete.'); } } };
     const handleAddNew = () => { setProductToEdit(null); setView('form'); };
+    const handleDelete = async (productId) => {
+        if (window.confirm('Are you sure you want to delete this product?')) {
+            try {
+                await sanityClient.delete(productId);
+                alert('Product deleted!');
+                fetchProducts();
+            } catch (error) { console.error("Failed to delete product:", error); }
+        }
+    };
+
     if (loading) return <h2>Loading products...</h2>;
-    if (view === 'form') { return <ProductForm onBack={() => setView('list')} onSave={fetchProducts} productToEdit={productToEdit} />; }
+
+    if (view === 'form') {
+        return <ProductForm onBack={() => setView('list')} onSave={fetchProducts} productToEdit={productToEdit} />;
+    }
+    
     return (
         <div className="content-box">
             <div className="content-box-header">
@@ -114,13 +164,24 @@ export default function ProductPage() {
             </div>
             <div className="table-container">
                 <table className="data-table">
-                    <thead><tr><th>Name</th><th>Category</th><th>Price</th><th>Actions</th></tr></thead>
+                    <thead><tr><th>Image</th><th>Name</th><th>Category</th><th>Price</th><th>Rating</th><th>Actions</th></tr></thead>
                     <tbody>
                         {products.map(product => (
-                        <tr key={product._id}><td>{product.name}</td><td>{product.category?.name || 'N/A'}</td><td>Rs. {product.price}</td><td className="action-buttons"><button className="btn-edit" onClick={() => handleEdit(product)}>Edit</button><button className="btn-delete" onClick={() => handleDelete(product._id)}>Delete</button></td></tr>))}
+                            <tr key={product._id}>
+                                <td><img src={getImageUrl(product.image)} alt={product.name} style={{width: '50px', height: '50px', objectFit: 'cover', borderRadius: '4px'}} /></td>
+                                <td>{product.name}</td>
+                                <td>{product.categoryName || 'N/A'}</td>
+                                <td>Rs. {product.price?.toFixed(2)}</td>
+                                <td>{product.rating || 'N/A'}</td>
+                                <td className="action-buttons">
+                                    <button className="btn-edit" onClick={() => handleEdit(product)}><Edit size={16} /></button>
+                                    <button className="btn-delete" onClick={() => handleDelete(product._id)}><Trash2 size={16} /></button>
+                                </td>
+                            </tr>
+                        ))}
                     </tbody>
                 </table>
             </div>
         </div>
     );
-};
+}

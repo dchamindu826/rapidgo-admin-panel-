@@ -1,0 +1,139 @@
+/* src/pages/DeliveryRequestsPage.module.css (NEW FILE) */
+
+.singleViewContainer {
+  padding: 1.5rem;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  border-bottom: 1px solid var(--bg-tertiary);
+  padding-bottom: 1.5rem;
+}
+
+.backButton {
+  background: none;
+  border: 1px solid var(--bg-tertiary);
+  color: var(--text-secondary);
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+.backButton:hover {
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.title {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.title svg {
+  color: var(--accent-primary);
+}
+
+.detailsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 1.5rem;
+}
+
+.card {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--bg-tertiary);
+  border-radius: 12px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.card h4 {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem 0;
+  color: var(--text-secondary);
+}
+.card h4 svg {
+  color: var(--accent-primary);
+}
+
+.detailItem {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.95rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px dashed var(--bg-tertiary);
+}
+.detailItem:last-child {
+  border-bottom: none;
+}
+.detailItem strong {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+.detailItem span {
+  color: var(--text-primary);
+  text-align: right;
+  font-weight: 500;
+}
+.detailItem .statusBadge {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    text-transform: capitalize;
+}
+.statusBadge.status-pending { background-color: #a855f7; color: #fff; }
+.statusBadge.status-assigned { background-color: #2563eb; color: #fff; }
+
+.actionCard {
+  grid-column: 1 / -1;
+  background-color: var(--bg-primary);
+}
+
+.assignGroup {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+.assignGroup select {
+  flex-grow: 1;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--bg-tertiary);
+  border-radius: 8px;
+  padding: 0.8rem 1rem;
+  color: var(--text-primary);
+  font-size: 1rem;
+}
+.assignGroup button {
+  padding: 0.8rem 1.5rem;
+  font-weight: 600;
+}
+.assignGroup button:disabled {
+  background-color: var(--bg-tertiary);
+  cursor: not-allowed;
+}
+
+.infoText {
+  margin-top: 1rem;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  background-color: var(--bg-secondary);
+  padding: 0.8rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--bg-tertiary);
+}
