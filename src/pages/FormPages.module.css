@@ -1,0 +1,160 @@
+/* src/pages/FormPages.module.css */
+
+.tableImage {
+    width: 50px;
+    height: 50px;
+    object-fit: cover;
+    border-radius: 5px;
+    background-color: #f0f0f0;
+}
+
+.categoryHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.manageLink {
+    font-size: 0.85rem;
+    color: #5865f2;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.manageLink:hover {
+    text-decoration: underline;
+}
+
+.checkboxGroup {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    background-color: var(--bg-secondary);
+    padding: 1rem;
+    border-radius: 5px;
+    border: 1px solid var(--bg-tertiary);
+}
+
+.checkboxLabel {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.checkboxLabel input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+/* src/pages/FormPages.module.css */
+
+/* --- KEEP YOUR EXISTING STYLES --- */
+.tableImage {
+    width: 50px;
+    height: 50px;
+    object-fit: cover;
+    border-radius: 5px;
+    background-color: #f0f0f0;
+}
+
+.categoryHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+/* --- REPLACE .manageLink WITH .addNewBtn --- */
+.addNewBtn {
+    font-size: 0.85rem;
+    color: #5865f2;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    padding: 5px;
+}
+.addNewBtn:hover {
+    text-decoration: underline;
+}
+
+/* --- ADD THESE NEW STYLES --- */
+.newCategoryInputWrapper {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 1rem;
+}
+.newCategoryInputWrapper input {
+    flex-grow: 1;
+    padding: 8px;
+    border: 1px solid var(--bg-tertiary);
+    border-radius: 5px;
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+}
+.newCategoryInputWrapper button {
+    padding: 8px 15px;
+    border: none;
+    background-color: var(--blue);
+    color: white;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.checkboxGroup {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    background-color: var(--bg-secondary);
+    padding: 1rem;
+    border-radius: 5px;
+    border: 1px solid var(--bg-tertiary);
+}
+
+.checkboxLabel {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.checkboxLabel input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+.filterWrapper {
+    margin-left: auto;
+    margin-right: 1rem;
+}
+
+.filterWrapper select {
+    padding: 0.5rem;
+    border-radius: 5px;
+    border: 1px solid var(--bg-tertiary);
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+.categoryCell {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    max-width: 250px;
+}
+
+.categoryBadge {
+    background-color: var(--bg-tertiary);
+    color: var(--text-secondary);
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    white-space: nowrap;
+}

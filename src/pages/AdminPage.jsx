@@ -1,7 +1,6 @@
-// src/pages/AdminPage.jsx
-
+// src/pages/AdminPage.jsx (FIXED)
 import React, { useState, useEffect, useCallback } from 'react';
-import sanityClient from '../sanityClient';
+import { client } from '../sanityClient';
 import { PlusCircle, ArrowLeft } from 'lucide-react';
 
 const AdminForm = ({ onBack, onSave, adminToEdit }) => {
@@ -12,7 +11,7 @@ const AdminForm = ({ onBack, onSave, adminToEdit }) => {
             setFormData({
                 fullName: adminToEdit.fullName || '',
                 username: adminToEdit.username.current || '',
-                password: '', // Password eka pennanne nehe
+                password: '',
                 role: adminToEdit.role || 'Admin'
             });
         }
@@ -28,16 +27,13 @@ const AdminForm = ({ onBack, onSave, adminToEdit }) => {
             username: { _type: 'slug', current: formData.username },
             role: formData.role,
         };
-        // Edit karanakota password eka type kaloth witharak update karanawa
-        if (formData.password) {
-            doc.password = formData.password;
-        }
+        if (formData.password) doc.password = formData.password;
 
         try {
             if (adminToEdit) {
-                await sanityClient.patch(adminToEdit._id).set(doc).commit();
+                await client.patch(adminToEdit._id).set(doc).commit();
             } else {
-                await sanityClient.create(doc);
+                await client.create(doc);
             }
             alert(`Admin ${adminToEdit ? 'updated' : 'created'} successfully!`);
             onSave();
@@ -69,7 +65,7 @@ export default function AdminPage() {
     const [view, setView] = useState('list');
     const [admins, setAdmins] = useState([]);
     const [adminToEdit, setAdminToEdit] = useState(null);
-    const fetchAdmins = useCallback(() => { sanityClient.fetch(`*[_type == "adminUser"]`).then(setAdmins); }, []);
+    const fetchAdmins = useCallback(() => { client.fetch(`*[_type == "adminUser"]`).then(setAdmins); }, []);
     
     useEffect(fetchAdmins, [fetchAdmins]);
     

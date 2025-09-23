@@ -1,30 +1,21 @@
-// src/pages/ProductPage.jsx (NEW CODE TO MATCH YOUR FORM)
+// src/pages/ProductPage.jsx (FIXED)
 
 import React, { useState, useEffect, useCallback } from 'react';
-import sanityClient from '../sanityClient';
+import { client } from '../sanityClient';
 import { PlusCircle, ArrowLeft, Trash2, Edit } from 'lucide-react';
 
-// Helper to get image URL from Sanity asset reference
 const getImageUrl = (imageRef) => {
     if (!imageRef?.asset?._ref) return 'https://via.placeholder.com/100';
     const ref = imageRef.asset._ref;
     const parts = ref.split('-');
     const [asset, assetId, dimensions, format] = parts;
-    const projectId = sanityClient.config().projectId;
-    const dataset = sanityClient.config().dataset;
+    const projectId = client.config().projectId;
+    const dataset = client.config().dataset;
     return `https://cdn.sanity.io/images/${projectId}/${dataset}/${assetId}-${dimensions}.${format}`;
 };
 
-// --- Product Form Component ---
 const ProductForm = ({ onBack, onSave, productToEdit }) => {
-    const [formData, setFormData] = useState({
-        name: '',
-        price: '',
-        rating: '',
-        shortDescription: '',
-        googleDriveLink: '',
-        envatoPreviewLink: ''
-    });
+    const [formData, setFormData] = useState({ name: '', price: '', rating: '', shortDescription: '', googleDriveLink: '', envatoPreviewLink: '' });
     const [category, setCategory] = useState('');
     const [imageFile, setImageFile] = useState(null);
     const [videoFile, setVideoFile] = useState(null);
@@ -32,15 +23,11 @@ const ProductForm = ({ onBack, onSave, productToEdit }) => {
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
-        sanityClient.fetch(`*[_type == "category"]{_id, name} | order(name asc)`).then(setCategories);
-        
+        client.fetch(`*[_type == "category"]{_id, name} | order(name asc)`).then(setCategories);
         if (productToEdit) {
             setFormData({
-                name: productToEdit.name || '',
-                price: productToEdit.price || '',
-                rating: productToEdit.rating || '',
-                shortDescription: productToEdit.shortDescription || '',
-                googleDriveLink: productToEdit.googleDriveLink || '',
+                name: productToEdit.name || '', price: productToEdit.price || '', rating: productToEdit.rating || '',
+                shortDescription: productToEdit.shortDescription || '', googleDriveLink: productToEdit.googleDriveLink || '',
                 envatoPreviewLink: productToEdit.envatoPreviewLink || ''
             });
             setCategory(productToEdit.category?._ref || '');
@@ -55,45 +42,33 @@ const ProductForm = ({ onBack, onSave, productToEdit }) => {
         e.preventDefault();
         if (isSubmitting) return;
         setIsSubmitting(true);
-
         try {
             let imageAsset, videoAsset;
-            // Upload files if new ones are selected
-            if (imageFile) {
-                imageAsset = await sanityClient.assets.upload('image', imageFile);
-            }
-            if (videoFile) {
-                videoAsset = await sanityClient.assets.upload('file', videoFile, { contentType: videoFile.type, filename: videoFile.name });
-            }
+            if (imageFile) imageAsset = await client.assets.upload('image', imageFile);
+            if (videoFile) videoAsset = await client.assets.upload('file', videoFile, { contentType: videoFile.type, filename: videoFile.name });
 
             const doc = {
                 _type: 'product',
                 name: formData.name,
                 slug: { _type: 'slug', current: formData.name.toLowerCase().replace(/\s+/g, '-').slice(0, 95) },
-                price: parseFloat(formData.price),
-                rating: parseFloat(formData.rating),
-                shortDescription: formData.shortDescription,
-                category: { _type: 'reference', _ref: category },
-                googleDriveLink: formData.googleDriveLink,
-                envatoPreviewLink: formData.envatoPreviewLink
+                price: parseFloat(formData.price), rating: parseFloat(formData.rating),
+                shortDescription: formData.shortDescription, category: { _type: 'reference', _ref: category },
+                googleDriveLink: formData.googleDriveLink, envatoPreviewLink: formData.envatoPreviewLink
             };
-
             if (imageAsset) doc.image = { _type: 'image', asset: { _type: 'reference', _ref: imageAsset._id } };
             if (videoAsset) doc.video = { _type: 'file', asset: { _type: 'reference', _ref: videoAsset._id } };
 
             if (productToEdit) {
-                await sanityClient.patch(productToEdit._id).set(doc).commit();
-                alert('Product updated successfully!');
+                await client.patch(productToEdit._id).set(doc).commit();
             } else {
-                await sanityClient.create(doc);
-                alert('Product created successfully!');
+                await client.create(doc);
             }
-
+            alert(`Product ${productToEdit ? 'updated' : 'created'} successfully!`);
             onSave();
             onBack();
         } catch (error) {
             console.error("Failed to save product:", error);
-            alert(`Failed to save product. Check if the 'product' schema in Sanity is correct. Error: ${error.message}`);
+            alert(`Failed to save product. Error: ${error.message}`);
         } finally {
             setIsSubmitting(false);
         }
@@ -121,8 +96,6 @@ const ProductForm = ({ onBack, onSave, productToEdit }) => {
     );
 };
 
-
-// --- Main Products Page Component (Shows list and handles switching to form) ---
 export default function ProductPage() {
     const [view, setView] = useState('list');
     const [products, setProducts] = useState([]);
@@ -131,7 +104,7 @@ export default function ProductPage() {
 
     const fetchProducts = useCallback(() => {
         setLoading(true);
-        sanityClient.fetch(`*[_type == "product"]{ ..., "categoryName": category->name } | order(_createdAt desc)`)
+        client.fetch(`*[_type == "product"]{ ..., "categoryName": category->name } | order(_createdAt desc)`)
             .then(data => { setLoading(false); setProducts(data); })
             .catch(console.error);
     }, []);
@@ -143,7 +116,7 @@ export default function ProductPage() {
     const handleDelete = async (productId) => {
         if (window.confirm('Are you sure you want to delete this product?')) {
             try {
-                await sanityClient.delete(productId);
+                await client.delete(productId);
                 alert('Product deleted!');
                 fetchProducts();
             } catch (error) { console.error("Failed to delete product:", error); }
@@ -151,10 +124,7 @@ export default function ProductPage() {
     };
 
     if (loading) return <h2>Loading products...</h2>;
-
-    if (view === 'form') {
-        return <ProductForm onBack={() => setView('list')} onSave={fetchProducts} productToEdit={productToEdit} />;
-    }
+    if (view === 'form') return <ProductForm onBack={() => setView('list')} onSave={fetchProducts} productToEdit={productToEdit} />;
     
     return (
         <div className="content-box">

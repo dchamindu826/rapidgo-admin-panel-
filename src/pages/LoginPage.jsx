@@ -1,14 +1,13 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Zap } from 'lucide-react';
-import sanityClient from '../sanityClient'; // Sanity client import karaganna
+import React, { useState } from 'react';
+import { client } from '../sanityClient'; // නිවැරදි import එක
 
-export default function LoginPage({ onLogin }) {
+// App.jsx එකෙන් එවන onLoginSuccess prop එක මෙතනට ගන්න ඕන
+export default function LoginPage({ onLoginSuccess }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // WENAS KAMA: Sanity eka check karana aluth logic eka
   const handleLogin = async (e) => {
     e.preventDefault();
     setIsLoading(true);
@@ -17,11 +16,12 @@ export default function LoginPage({ onLogin }) {
     try {
         const query = `*[_type == "adminUser" && username.current == $username && password == $password][0]`;
         const params = { username, password };
-        const adminUser = await sanityClient.fetch(query, params);
+        // FIX 1: 'sanityClient' වෙනුවට 'client' පාවිච්චි කරනවා
+        const adminUser = await client.fetch(query, params);
 
         if (adminUser) {
-            // User hari nam, login karanawa
-            onLogin();
+            // FIX 2: User හරි නම්, userge data ටිකත් එක්ක onLoginSuccess එක call කරනවා
+            onLoginSuccess(adminUser);
         } else {
             setError('Invalid username or password.');
         }
@@ -35,18 +35,25 @@ export default function LoginPage({ onLogin }) {
 
   return (
     <div className="login-container">
-            <div className="login-box">
-                {/* WENAS KAMA: Icon eka wenuwata logo eka demma */}
-                <img src="/logo.png" alt="RapidGo Logo" className="login-logo" />
-                <h2>Admin Panel</h2>
-                <p>Sign in to manage your services</p>
-                <form className="login-form" onSubmit={handleLogin}>
-                    <div className="form-group"><label>Username</label><input type="text" value={username} onChange={(e) => setUsername(e.target.value)} required /></div>
-                    <div className="form-group"><label>Password</label><input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required /></div>
-                    {error && <p className="error-message">{error}</p>}
-                    <button type="submit" className="btn-login" disabled={isLoading}>{isLoading ? 'Logging in...' : 'Login'}</button>
-                </form>
-            </div>
+        <div className="login-box">
+            <img src="/logo.png" alt="RapidGo Logo" className="login-logo" />
+            <h2>Admin Panel</h2>
+            <p>Sign in to manage your services</p>
+            <form className="login-form" onSubmit={handleLogin}>
+                <div className="form-group">
+                    <label>Username</label>
+                    <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} required />
+                </div>
+                <div className="form-group">
+                    <label>Password</label>
+                    <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                </div>
+                {error && <p className="error-message">{error}</p>}
+                <button type="submit" className="btn-login" disabled={isLoading}>
+                    {isLoading ? 'Logging in...' : 'Login'}
+                </button>
+            </form>
         </div>
+    </div>
   );
 }

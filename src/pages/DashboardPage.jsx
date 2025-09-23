@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 // ✅ WENAS KAMA: 'sanityClient' -> 'client' widihata import kara
-import client from '../sanityClient';
+import { client } from '../sanityClient';
 import { LineChart, Line, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Package, CheckCircle, XCircle, Clock, DollarSign, ListOrdered, ShoppingBag, Truck } from 'lucide-react';
 import styles from './DashboardPage.module.css';

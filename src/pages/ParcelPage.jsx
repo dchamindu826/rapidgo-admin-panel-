@@ -1,10 +1,11 @@
+// src/pages/ParcelPage.jsx (FIXED)
+
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import sanityClient from '../sanityClient';
+import { client } from '../sanityClient';
 import { districts } from '../constants/districts';
 import { PlusCircle, ArrowLeft } from 'lucide-react';
 import Pagination from '../components/Pagination';
 
-// === Parcel Form Component ===
 const ParcelForm = ({ onBack, onSave }) => {
     const [formData, setFormData] = useState({
         trackingNumber: '',
@@ -17,7 +18,7 @@ const ParcelForm = ({ onBack, onSave }) => {
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
-        sanityClient.fetch('*[_type == "rider"]{_id, fullName, serviceAreas}').then(setAllRiders).catch(console.error);
+        client.fetch('*[_type == "rider"]{_id, fullName, serviceAreas}').then(setAllRiders).catch(console.error);
     }, []);
 
     const handleDistrictChange = (e) => {
@@ -44,7 +45,7 @@ const ParcelForm = ({ onBack, onSave }) => {
             createdAt: (new Date()).toISOString(),
         };
         try {
-            await sanityClient.create(doc);
+            await client.create(doc);
             alert('Parcel created successfully!');
             onSave();
             onBack();
@@ -94,7 +95,6 @@ const ParcelForm = ({ onBack, onSave }) => {
     );
 };
 
-// === Main Parcel Page Component ===
 export default function ParcelPage() {
     const [view, setView] = useState('list');
     const [parcels, setParcels] = useState([]);
@@ -106,13 +106,13 @@ export default function ParcelPage() {
 
     const fetchParcels = useCallback(() => {
         setLoading(true);
-        sanityClient.fetch(`*[_type == "parcel"] | order(createdAt desc){ ..., "riderName": assignedRider->fullName }`)
+        client.fetch(`*[_type == "parcel"] | order(createdAt desc){ ..., "riderName": assignedRider->fullName }`)
             .then(data => { setParcels(data); setLoading(false); }).catch(console.error);
     }, []);
 
     useEffect(() => {
         fetchParcels();
-        const subscription = sanityClient.listen(`*[_type == "parcel"]`).subscribe(() => {
+        const subscription = client.listen(`*[_type == "parcel"]`).subscribe(() => {
             fetchParcels();
         });
         return () => subscription.unsubscribe();
@@ -121,7 +121,6 @@ export default function ParcelPage() {
     const filteredParcels = useMemo(() => {
         return parcels
             .filter(p => {
-                // "Pending" tab eka "In Transit" ha "On the way" pennanna
                 if (activeTab === 'Pending') {
                     return ['Pending', 'In Transit', 'On the way'].includes(p.status);
                 }
@@ -146,7 +145,7 @@ export default function ParcelPage() {
                 </div>
                 <button className="btn-primary" onClick={() => setView('form')}><PlusCircle size={16}/> Add New Parcel</button>
             </div>
-             <div className="tabs-container">
+            <div className="tabs-container">
                 <button className={`tab-button ${activeTab === 'Pending' ? 'active' : ''}`} onClick={() => { setActiveTab('Pending'); setCurrentPage(1); }}>Pending</button>
                 <button className={`tab-button ${activeTab === 'Delivered' ? 'active' : ''}`} onClick={() => { setActiveTab('Delivered'); setCurrentPage(1); }}>Delivered</button>
                 <button className={`tab-button ${activeTab === 'Returned' ? 'active' : ''}`} onClick={() => { setActiveTab('Returned'); setCurrentPage(1); }}>Returned</button>

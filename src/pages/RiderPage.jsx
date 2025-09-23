@@ -1,6 +1,7 @@
-// WENAS KAMA MEHI THIBE: Import eka niweradi kara
+// src/pages/RiderPage.jsx (FIXED)
+
 import React, { useState, useEffect, useCallback } from 'react';
-import sanityClient, { urlFor } from '../sanityClient';
+import { client, urlFor } from '../sanityClient';
 import { districts } from '../constants/districts';
 import { PlusCircle, ArrowLeft, X as CloseIcon } from 'lucide-react';
 import styles from './RiderPage.module.css';
@@ -88,19 +89,19 @@ const RiderForm = ({ onBack, onSave, riderToEdit }) => {
         try {
             const assetRefs = {};
             if (files.faceImage) {
-                const asset = await sanityClient.assets.upload('image', files.faceImage);
+                const asset = await client.assets.upload('image', files.faceImage);
                 assetRefs.faceImage = { _type: 'image', asset: { _type: 'reference', _ref: asset._id } };
             }
             if (files.insuranceCard) {
-                const asset = await sanityClient.assets.upload('image', files.insuranceCard);
+                const asset = await client.assets.upload('image', files.insuranceCard);
                 assetRefs.insuranceCard = { _type: 'image', asset: { _type: 'reference', _ref: asset._id } };
             }
             if (files.idPhotos.length > 0) {
-                const uploadedAssets = await Promise.all(files.idPhotos.map(file => sanityClient.assets.upload('image', file)));
+                const uploadedAssets = await Promise.all(files.idPhotos.map(file => client.assets.upload('image', file)));
                 assetRefs.idPhotos = uploadedAssets.map(asset => ({ _type: 'image', asset: { _type: 'reference', _ref: asset._id } }));
             }
             if (files.licensePhotos.length > 0) {
-                const uploadedAssets = await Promise.all(files.licensePhotos.map(file => sanityClient.assets.upload('image', file)));
+                const uploadedAssets = await Promise.all(files.licensePhotos.map(file => client.assets.upload('image', file)));
                 assetRefs.licensePhotos = uploadedAssets.map(asset => ({ _type: 'image', asset: { _type: 'reference', _ref: asset._id } }));
             }
 
@@ -111,13 +112,12 @@ const RiderForm = ({ onBack, onSave, riderToEdit }) => {
                 ...assetRefs
             };
             
-            // Don't update password if it's blank during an edit
             if (riderToEdit && !formData.password) {
                 delete doc.password;
             }
 
-            if (riderToEdit) await sanityClient.patch(riderToEdit._id).set(doc).commit();
-            else await sanityClient.create(doc);
+            if (riderToEdit) await client.patch(riderToEdit._id).set(doc).commit();
+            else await client.create(doc);
             
             alert(`Rider ${riderToEdit ? 'updated' : 'saved'} successfully!`);
             onSave(); onBack();
@@ -162,7 +162,7 @@ const RiderForm = ({ onBack, onSave, riderToEdit }) => {
                     <div className={styles.checkboxGroup}>
                         {districts.map(d => (<label key={d}><input type="checkbox" checked={serviceAreas.includes(d)} onChange={() => handleServiceAreaChange(d)} /> {d}</label>))}
                     </div>
-                 </div>
+                </div>
 
                 <div className="form-actions" style={{gridColumn: '1 / -1'}}><button type="submit" className="btn-primary" disabled={isSubmitting}>{isSubmitting ? 'Saving...' : 'Save Rider'}</button></div>
             </form>
@@ -183,7 +183,7 @@ export default function RiderPage() {
 
     const fetchRiders = useCallback(() => {
         setLoading(true);
-        sanityClient.fetch(`*[_type == "rider"]{..., "username": username.current} | order(fullName asc)`)
+        client.fetch(`*[_type == "rider"]{..., "username": username.current} | order(fullName asc)`)
             .then(data => { setRiders(data); setLoading(false); }).catch(console.error);
     }, []);
 
@@ -204,7 +204,7 @@ export default function RiderPage() {
 
     return (
         <div className="content-box">
-             {selectedRider && <RiderDetailModal rider={selectedRider} onClose={() => setSelectedRider(null)} />}
+            {selectedRider && <RiderDetailModal rider={selectedRider} onClose={() => setSelectedRider(null)} />}
             <div className="content-box-header">
                 <h2>Active Riders</h2>
                 <button className="btn-primary" onClick={handleAddNew}><PlusCircle size={16}/> Register New Rider</button>
