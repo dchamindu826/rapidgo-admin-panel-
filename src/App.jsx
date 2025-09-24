@@ -37,11 +37,10 @@ const PageRenderer = ({ pageName }) => {
 
 export default function App() {
     const [loggedInAdmin, setLoggedInAdmin] = useState(null);
-    const [isLoading, setIsLoading] = useState(true); // App eka load weddi check karanna
+    const [isLoading, setIsLoading] = useState(true);
     const [activePage, setActivePage] = useState('Dashboard');
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
-    // App eka patan gaddima localStorage eke log wela inna kenek innawada kiyala balanawa
     useEffect(() => {
         try {
             const savedAdmin = localStorage.getItem('adminUser');
@@ -50,34 +49,29 @@ export default function App() {
             }
         } catch (error) {
             console.error("Failed to parse admin user from localStorage", error);
-            localStorage.removeItem('adminUser'); // Awul data clear karanawa
+            localStorage.removeItem('adminUser');
         }
-        setIsLoading(false); // Check karala iwarai
+        setIsLoading(false);
     }, []);
     
-    // Me function eka LoginPage ekata denawa
     const handleLoginSuccess = (adminData) => {
         localStorage.setItem('adminUser', JSON.stringify(adminData));
         setLoggedInAdmin(adminData);
     };
 
-    // Me function eka Sidebar ekata denawa
     const handleLogout = () => {
         localStorage.removeItem('adminUser');
         setLoggedInAdmin(null);
     };
 
-    // Check karana kan podi loading ekak pennanawa
     if (isLoading) {
         return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>Loading...</div>;
     }
 
-    // Admin kenek log wela nathnam, LoginPage eka pennanawa
     if (!loggedInAdmin) { 
         return <LoginPage onLoginSuccess={handleLoginSuccess} />; 
     }
 
-    // Log wela nam, Dashboard eka pennanawa
     return (
         <div className="admin-layout">
             <Sidebar 
@@ -96,4 +90,3 @@ export default function App() {
         </div>
     );
 }
-

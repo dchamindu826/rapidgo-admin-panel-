@@ -3,11 +3,11 @@ import { client } from '../sanityClient';
 import { 
     LayoutDashboard, ShoppingBag, Bell, Users, Shield, LogOut, 
     ChevronLeft, ChevronRight, Shapes, Package, Utensils, 
-    ClipboardList, Building2, CreditCard // <-- CreditCard icon එක මෙතනට IMPORT කලා
+    ClipboardList, Building2, CreditCard
 } from 'lucide-react';
 import './Sidebar.css';
 
-export default function Sidebar({ activePage, setActivePage, isCollapsed, setIsCollapsed, onLogout }) {
+export default function Sidebar({ activePage, setActivePage, isCollapsed, setIsSidebarCollapsed, onLogout }) {
     const [newOrderAlert, setNewOrderAlert] = useState(false);
 
     useEffect(() => {
@@ -61,9 +61,9 @@ export default function Sidebar({ activePage, setActivePage, isCollapsed, setIsC
                      {!isCollapsed && <span className="nav-text">Logout</span>}
                  </a>
              </div>
-             <button onClick={() => setIsCollapsed(!isCollapsed)} className="sidebar-toggle">
+             <button onClick={() => setIsSidebarCollapsed(!isCollapsed)} className="sidebar-toggle">
                  {isCollapsed ? <ChevronRight size={16}/> : <ChevronLeft size={16}/>}
-            </button>
+             </button>
         </aside>
     );
 };

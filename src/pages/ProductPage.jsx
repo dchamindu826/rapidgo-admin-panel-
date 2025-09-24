@@ -1,5 +1,3 @@
-// src/pages/ProductPage.jsx (FIXED)
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { client } from '../sanityClient';
 import { PlusCircle, ArrowLeft, Trash2, Edit } from 'lucide-react';
@@ -8,17 +6,17 @@ const getImageUrl = (imageRef) => {
     if (!imageRef?.asset?._ref) return 'https://via.placeholder.com/100';
     const ref = imageRef.asset._ref;
     const parts = ref.split('-');
-    const [asset, assetId, dimensions, format] = parts;
+    const [, assetId, dimensions, format] = parts;
     const projectId = client.config().projectId;
     const dataset = client.config().dataset;
     return `https://cdn.sanity.io/images/${projectId}/${dataset}/${assetId}-${dimensions}.${format}`;
 };
 
 const ProductForm = ({ onBack, onSave, productToEdit }) => {
-    const [formData, setFormData] = useState({ name: '', price: '', rating: '', shortDescription: '', googleDriveLink: '', envatoPreviewLink: '' });
-    const [category, setCategory] = useState('');
-    const [imageFile, setImageFile] = useState(null);
+    const [formData, setFormData] = useState({ name: '', price: '', rating: '', shortDescription: '', googleDriveLink: '', envatoMediaLink: '' });
+    const [imageFiles, setImageFiles] = useState([]);
     const [videoFile, setVideoFile] = useState(null);
+    const [category, setCategory] = useState('');
     const [categories, setCategories] = useState([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -26,16 +24,19 @@ const ProductForm = ({ onBack, onSave, productToEdit }) => {
         client.fetch(`*[_type == "category"]{_id, name} | order(name asc)`).then(setCategories);
         if (productToEdit) {
             setFormData({
-                name: productToEdit.name || '', price: productToEdit.price || '', rating: productToEdit.rating || '',
-                shortDescription: productToEdit.shortDescription || '', googleDriveLink: productToEdit.googleDriveLink || '',
-                envatoPreviewLink: productToEdit.envatoPreviewLink || ''
+                name: productToEdit.name || '',
+                price: productToEdit.price || '',
+                rating: productToEdit.rating || '',
+                shortDescription: productToEdit.shortDescription || '',
+                googleDriveLink: productToEdit.googleDriveLink || '',
+                envatoMediaLink: productToEdit.envatoMediaLink || ''
             });
             setCategory(productToEdit.category?._ref || '');
         }
     }, [productToEdit]);
 
     const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
-    const handleImageChange = (e) => setImageFile(e.target.files[0]);
+    const handleImageChange = (e) => setImageFiles(Array.from(e.target.files));
     const handleVideoChange = (e) => setVideoFile(e.target.files[0]);
 
     const handleSubmit = async (e) => {
@@ -43,29 +44,54 @@ const ProductForm = ({ onBack, onSave, productToEdit }) => {
         if (isSubmitting) return;
         setIsSubmitting(true);
         try {
-            let imageAsset, videoAsset;
-            if (imageFile) imageAsset = await client.assets.upload('image', imageFile);
-            if (videoFile) videoAsset = await client.assets.upload('file', videoFile, { contentType: videoFile.type, filename: videoFile.name });
+            let videoAsset;
+            const imageAssets = await Promise.all(
+                imageFiles.map(file => client.assets.upload('image', file))
+            );
+
+            if (videoFile) {
+                videoAsset = await client.assets.upload('file', videoFile, { contentType: videoFile.type, filename: videoFile.name });
+            }
 
             const doc = {
                 _type: 'product',
                 name: formData.name,
                 slug: { _type: 'slug', current: formData.name.toLowerCase().replace(/\s+/g, '-').slice(0, 95) },
-                price: parseFloat(formData.price), rating: parseFloat(formData.rating),
-                shortDescription: formData.shortDescription, category: { _type: 'reference', _ref: category },
-                googleDriveLink: formData.googleDriveLink, envatoPreviewLink: formData.envatoPreviewLink
+                price: parseFloat(formData.price),
+                rating: parseFloat(formData.rating),
+                shortDescription: formData.shortDescription,
+                category: { _type: 'reference', _ref: category },
+                googleDriveLink: formData.googleDriveLink,
+                envatoMediaLink: formData.envatoMediaLink
             };
-            if (imageAsset) doc.image = { _type: 'image', asset: { _type: 'reference', _ref: imageAsset._id } };
-            if (videoAsset) doc.video = { _type: 'file', asset: { _type: 'reference', _ref: videoAsset._id } };
+
+            if (imageAssets.length > 0) {
+                doc.images = imageAssets.map(asset => ({
+                    _type: 'image',
+                    asset: {
+                        _type: 'reference',
+                        _ref: asset._id
+                    }
+                }));
+            }
+
+            if (videoAsset) {
+                doc.video = { _type: 'file', asset: { _type: 'reference', _ref: videoAsset._id } };
+            }
 
             if (productToEdit) {
-                await client.patch(productToEdit._id).set(doc).commit();
+                await client.patch(productToEdit._id).unset(['images']).set(doc).commit();
             } else {
                 await client.create(doc);
             }
-            alert(`Product ${productToEdit ? 'updated' : 'created'} successfully!`);
-            onSave();
-            onBack();
+
+            Swal.fire({
+  icon: 'success',
+  title: 'Successfully Created!',
+  text: 'Your new product has been saved.',
+  timer: 2000, // තත්පර 2කින් தானாகම මැකී යයි
+  showConfirmButton: false
+});
         } catch (error) {
             console.error("Failed to save product:", error);
             alert(`Failed to save product. Error: ${error.message}`);
@@ -86,10 +112,10 @@ const ProductForm = ({ onBack, onSave, productToEdit }) => {
                 <div className="form-group"><label>Category</label><select value={category} onChange={(e) => setCategory(e.target.value)} required><option value="" disabled>Select a category</option>{categories.map(cat => <option key={cat._id} value={cat._id}>{cat.name}</option>)}</select></div>
                 <div className="form-group"><label>Rating (1-5)</label><input type="number" name="rating" min="1" max="5" step="0.1" value={formData.rating} onChange={handleChange} /></div>
                 <div className="form-group full-width"><label>Short Description</label><textarea name="shortDescription" rows="3" value={formData.shortDescription} onChange={handleChange}></textarea></div>
-                <div className="form-group"><label>Product Images (Re-upload to change)</label><input type="file" accept="image/*" onChange={handleImageChange} /></div>
-                <div className="form-group"><label>Product Video (Re-upload to change)</label><input type="file" accept="video/*" onChange={handleVideoChange} /></div>
+                <div className="form-group"><label>Product Images (Can select multiple)</label><input type="file" accept="image/*" onChange={handleImageChange} multiple /></div>
+                <div className="form-group"><label>Product Video (Optional)</label><input type="file" accept="video/*" onChange={handleVideoChange} /></div>
                 <div className="form-group"><label>Google Drive Link</label><input type="url" name="googleDriveLink" value={formData.googleDriveLink} onChange={handleChange} /></div>
-                <div className="form-group"><label>Envato Preview Link</label><input type="url" name="envatoPreviewLink" value={formData.envatoPreviewLink} onChange={handleChange} /></div>
+                <div className="form-group"><label>Envato Preview Link</label><input type="url" name="envatoMediaLink" value={formData.envatoMediaLink} onChange={handleChange} /></div>
                 <div className="form-actions"><button type="submit" className="btn-primary" disabled={isSubmitting}>{isSubmitting ? 'Saving...' : 'Save Product'}</button></div>
             </form>
         </div>
@@ -104,12 +130,14 @@ export default function ProductPage() {
 
     const fetchProducts = useCallback(() => {
         setLoading(true);
-        client.fetch(`*[_type == "product"]{ ..., "categoryName": category->name } | order(_createdAt desc)`)
+        client.fetch(`*[_type == "product"]{ ..., "categoryName": category->name, "image": images[0] } | order(_createdAt desc)`)
             .then(data => { setLoading(false); setProducts(data); })
             .catch(console.error);
     }, []);
 
-    useEffect(fetchProducts, [fetchProducts]);
+    useEffect(() => {
+        fetchProducts();
+    }, [fetchProducts]);
 
     const handleEdit = (product) => { setProductToEdit(product); setView('form'); };
     const handleAddNew = () => { setProductToEdit(null); setView('form'); };
