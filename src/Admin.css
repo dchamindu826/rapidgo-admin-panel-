@@ -223,3 +223,19 @@ body { background-color: var(--bg-primary); font-family: var(--font-family); col
     height: 180px;
     width: auto;
 }
+
+.modal-body {
+  max-height: 75vh; /* Modal එකේ body එක screen එකෙන් 75% කට වඩා උස යන්න දෙන්න එපා */
+  overflow-y: auto; /* Content එක ඊට වඩා උස නම්, scroll bar එකක් පෙන්නන්න */
+  padding-right: 15px; /* Scroll bar එකට ඉඩක් */
+}
+
+/* Payment Slip Image එක පාලනය කරනවා */
+.payment-slip-img {
+  width: 100%; /* Container එකේ සම්පූර්ණ පළල ගන්න */
+  max-height: 500px; /* Image එකේ උපරිම උස 500px වලට සීමා කරනවා (මේ අගය කැමති විදිහට වෙනස් කරන්න) */
+  object-fit: contain; /* Image එකේ aspect ratio එක වෙනස් නොකර, කොටුව ඇතුළේ සම්පූර්ණයෙන්ම පෙන්නනවා */
+  display: block;
+  margin: 10px auto; /* උඩින් සහ යටින් පොඩි ඉඩක් තියලා, මැදට ගන්නවා */
+  background-color: #000; /* Image එකේ background එක කළු පාට කරනවා */
+}
