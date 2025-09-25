@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import './Admin.css';
 
 // Import Pages & Components
@@ -40,28 +40,58 @@ export default function App() {
     const [isLoading, setIsLoading] = useState(true);
     const [activePage, setActivePage] = useState('Dashboard');
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+    
+    const logoutTimerId = useRef(null);
+
+    const handleLogout = useCallback(() => {
+        sessionStorage.removeItem('adminUser');
+        setLoggedInAdmin(null);
+        if (logoutTimerId.current) {
+            clearTimeout(logoutTimerId.current);
+        }
+    }, []);
+
+    const resetTimer = useCallback(() => {
+        if (logoutTimerId.current) {
+            clearTimeout(logoutTimerId.current);
+        }
+        logoutTimerId.current = setTimeout(() => {
+            alert("You have been logged out due to 5 minutes of inactivity.");
+            handleLogout();
+        }, 5 * 60 * 1000); // 5 minutes in milliseconds
+    }, [handleLogout]);
+
+    useEffect(() => {
+        if (loggedInAdmin) {
+            const events = ['mousemove', 'keydown', 'click', 'scroll'];
+            events.forEach(event => window.addEventListener(event, resetTimer));
+            resetTimer();
+
+            return () => {
+                events.forEach(event => window.removeEventListener(event, resetTimer));
+                if (logoutTimerId.current) {
+                    clearTimeout(logoutTimerId.current);
+                }
+            };
+        }
+    }, [loggedInAdmin, resetTimer]);
 
     useEffect(() => {
         try {
-            const savedAdmin = localStorage.getItem('adminUser');
+            const savedAdmin = sessionStorage.getItem('adminUser');
             if (savedAdmin) {
                 setLoggedInAdmin(JSON.parse(savedAdmin));
             }
         } catch (error) {
-            console.error("Failed to parse admin user from localStorage", error);
-            localStorage.removeItem('adminUser');
+            console.error("Failed to parse admin user from sessionStorage", error);
+            sessionStorage.removeItem('adminUser');
         }
         setIsLoading(false);
     }, []);
     
     const handleLoginSuccess = (adminData) => {
-        localStorage.setItem('adminUser', JSON.stringify(adminData));
+        sessionStorage.setItem('adminUser', JSON.stringify(adminData));
         setLoggedInAdmin(adminData);
-    };
-
-    const handleLogout = () => {
-        localStorage.removeItem('adminUser');
-        setLoggedInAdmin(null);
     };
 
     if (isLoading) {
@@ -90,3 +120,4 @@ export default function App() {
         </div>
     );
 }
+
