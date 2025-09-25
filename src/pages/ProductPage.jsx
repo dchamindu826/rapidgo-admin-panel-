@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { client } from '../sanityClient';
 import { PlusCircle, ArrowLeft, Trash2, Edit } from 'lucide-react';
+import Swal from 'sweetalert2';
+import 'sweetalert2/dist/sweetalert2.min.css';
 
 const getImageUrl = (imageRef) => {
     if (!imageRef?.asset?._ref) return 'https://via.placeholder.com/100';
