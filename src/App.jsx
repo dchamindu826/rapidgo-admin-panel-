@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import './Admin.css';
+import { LogOut, User } from 'lucide-react'; // <-- LogOut icon eka methanata genawa
 
 // Import Pages & Components
 import LoginPage from './pages/LoginPage';
@@ -21,13 +22,31 @@ import RestaurantStaffPage from './pages/RestaurantStaffPage';
 import AnnouncementsPage from './pages/AnnouncementsPage';
 import ProfitReportPage from './pages/ProfitReportPage';
 
-const Header = ({ title }) => (<header className="main-header"><h1>{title}</h1></header>);
+
+// --- Header Component eka FIX KALA ---
+const Header = ({ title, onLogout, admin }) => (
+    <header className="main-header">
+        <h1>{title}</h1>
+        <div className="logout-group">
+            <div className="admin-info">
+                <User size={16} /> 
+                {/* === FIX: Optional Chaining (?) add kara === */}
+                <span>{admin?.fullName || 'Admin'} ({admin?.role || 'N/A'})</span>
+            </div>
+            <button className="btn-logout" onClick={onLogout}>
+                <LogOut size={18} />
+                <span>Logout</span>
+            </button>
+        </div>
+    </header>
+);
+// ----------------------------------------------------------------------
+
 
 const PageRenderer = ({ pageName }) => {
     switch (pageName) {
         case 'Dashboard': return <DashboardPage />;
         case 'Profit Report': return <ProfitReportPage />;
-        case 'Announcements': return <AnnouncementsPage />;
         case 'Products': return <ProductPage />;
         case 'Delivery Requests': return <DeliveryRequestsPage />;
         case 'Categories': return <CategoriesPage />;
@@ -38,9 +57,10 @@ const PageRenderer = ({ pageName }) => {
         case 'Digital Orders': return <DigitalOrdersPage />;
         case 'Food Orders': return <FoodOrdersPage />;
         case 'Restaurants': return <RestaurantsPage />;
-        case 'Restaurant Staff': return <RestaurantStaffPage />
-        case 'Reports': return <ReportsPage />;
         case 'Menu Items': return <MenuItemsPage />;
+        case 'Restaurant Staff': return <RestaurantStaffPage />;
+        case 'Announcements': return <AnnouncementsPage />;
+        case 'Reports': return <ReportsPage />;
         default: return <DashboardPage />;
     }
 };
@@ -75,7 +95,9 @@ export default function App() {
         if (loggedInAdmin) {
             const events = ['mousemove', 'keydown', 'click', 'scroll'];
             events.forEach(event => window.addEventListener(event, resetTimer));
-            resetTimer();
+
+            // Component mount una gaman timer eka start karanawa
+            resetTimer(); 
 
             return () => {
                 events.forEach(event => window.removeEventListener(event, resetTimer));
@@ -119,10 +141,9 @@ export default function App() {
                 setActivePage={setActivePage} 
                 isCollapsed={isSidebarCollapsed} 
                 setIsSidebarCollapsed={setIsSidebarCollapsed} 
-                onLogout={handleLogout} 
             />
             <div className={`main-content ${isSidebarCollapsed ? 'collapsed' : ''}`}>
-                <Header title={activePage} />
+                <Header title={activePage} onLogout={handleLogout} admin={loggedInAdmin} />
                 <main className="page-content">
                     <PageRenderer pageName={activePage} />
                 </main>

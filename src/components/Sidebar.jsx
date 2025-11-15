@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { client } from '../sanityClient';
 import { 
-    LayoutDashboard, ShoppingBag, Bell, Users, Shield, LogOut, 
+    // LogOut eka App.jsx walata genichcha nisa methanin ain karanawa
+    LayoutDashboard, ShoppingBag, Bell, Users, Shield, 
     ChevronLeft, ChevronRight, Shapes, Package, Utensils, 
     ClipboardList, Building2, CreditCard, DollarSign, FileText, UserCog, Megaphone, TrendingUp
 } from 'lucide-react';
 import './Sidebar.css';
 
-export default function Sidebar({ activePage, setActivePage, isCollapsed, setIsSidebarCollapsed, onLogout }) {
+// --- onLogout prop eka methanin ain karanawa ---
+export default function Sidebar({ activePage, setActivePage, isCollapsed, setIsSidebarCollapsed }) {
     const [newOrderAlert, setNewOrderAlert] = useState(false);
-    // --- 1. ALUTH STATE EKA PAYOUTS WALATA ---
     const [newPayoutAlert, setNewPayoutAlert] = useState(false);
 
     useEffect(() => {
@@ -33,17 +34,15 @@ export default function Sidebar({ activePage, setActivePage, isCollapsed, setIsS
 
         return () => {
             orderSubscription.unsubscribe();
-            payoutSubscription.unsubscribe(); // <-- 3. Unsubscribe karanna
+            payoutSubscription.unsubscribe();
         };
     }, []);
 
     const handleNavClick = (pageName) => {
         setActivePage(pageName);
-        // Alert eka reset karana thana
         if (['Food Orders', 'Delivery Requests', 'Digital Orders'].includes(pageName)) {
             setNewOrderAlert(false);
         }
-        // --- 4. PAYOUT ALERT EKATH RESET KARANNA ---
         if (pageName === 'Payouts') {
             setNewPayoutAlert(false);
         }
@@ -63,7 +62,6 @@ export default function Sidebar({ activePage, setActivePage, isCollapsed, setIsS
         { name: 'Products', icon: <ShoppingBag size={20} /> },
         { name: 'Categories', icon: <Shapes size={20} /> },
         { name: 'Riders', icon: <Users size={20} /> },
-        // --- 5. ALERT EKA PAYOUTS WALATA ADD KARANNA ---
         { name: 'Payouts', icon: <DollarSign size={20} />, alert: newPayoutAlert }, 
         { name: 'Parcels', icon: <Package size={20} /> },
         { name: 'Admins', icon: <Shield size={20} /> },
@@ -77,17 +75,11 @@ export default function Sidebar({ activePage, setActivePage, isCollapsed, setIsS
                     <a key={item.name} href="#" onClick={(e) => { e.preventDefault(); handleNavClick(item.name); }} className={`nav-item ${activePage === item.name ? 'active' : ''}`}>
                         {item.icon}
                         {!isCollapsed && <span className="nav-text">{item.name}</span>}
-                        {/* Check karanne 'item.alert' kiyala witharai */}
                         {item.alert && !isCollapsed && <span className="notification-dot"></span>}
                     </a>
                 ))}
             </nav>
-            <div className="sidebar-footer">
-                 <a href="#" onClick={(e) => { e.preventDefault(); onLogout(); }} className="nav-item">
-                     <LogOut size={20} />
-                     {!isCollapsed && <span className="nav-text">Logout</span>}
-                 </a>
-           </div>
+            {/* ⚠️ NOTE: sidebar-footer block eka methanin remove karala thiyenne */}
            <button onClick={() => setIsSidebarCollapsed(!isCollapsed)} className="sidebar-toggle">
                {isCollapsed ? <ChevronRight size={16}/> : <ChevronLeft size={16}/>}
            </button>

@@ -25,12 +25,18 @@ body { background-color: var(--bg-primary); font-family: var(--font-family); col
 .sidebar-header { display: flex; align-items: center; height: 80px; padding: 0 1.5rem; border-bottom: 1px solid var(--bg-tertiary); color: var(--accent-primary); flex-shrink: 0; overflow: hidden; }
 .sidebar.collapsed .sidebar-header { justify-content: center; padding: 0; }
 .sidebar-header .logo-text { margin-left: 0.75rem; font-size: 1.25rem; font-weight: 700; color: var(--text-primary); }
-.sidebar-nav { flex-grow: 1; padding: 1rem; display: flex; flex-direction: column; gap: 0.5rem; }
+.sidebar-nav { 
+    flex-grow: 1; 
+    padding: 1rem; 
+    display: flex; 
+    flex-direction: column; 
+    gap: 0.5rem;}
+
 .nav-item { display: flex; align-items: center; padding: 0.8rem 1rem; border-radius: 0.5rem; color: var(--text-secondary); text-decoration: none; font-weight: 500; transition: background-color 0.2s, color 0.2s; overflow: hidden; white-space: nowrap; }
 .nav-item:hover { background-color: var(--bg-tertiary); color: var(--text-primary); }
 .nav-item.active { background-color: var(--accent-primary); color: white; }
 .nav-item .nav-text { margin-left: 1rem; }
-.sidebar-footer { padding: 1rem; border-top: 1px solid var(--bg-tertiary); }
+
 .sidebar-toggle { position: absolute; top: 5rem; right: -12px; background-color: var(--bg-tertiary); border: 1px solid #475569; color: var(--text-primary); border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
 .main-content { flex-grow: 1; display: flex; flex-direction: column; transition: margin-left 0.3s ease; margin-left: 256px; width: calc(100% - 256px); }
 .main-content.collapsed { margin-left: 80px; width: calc(100% - 80px); }
@@ -238,4 +244,46 @@ body { background-color: var(--bg-primary); font-family: var(--font-family); col
   display: block;
   margin: 10px auto; /* උඩින් සහ යටින් පොඩි ඉඩක් තියලා, මැදට ගන්නවා */
   background-color: #000; /* Image එකේ background එක කළු පාට කරනවා */
+}
+
+.main-header {
+    display: flex;
+    justify-content: space-between; /* title eka atharai button eka atharai idak thiyanna */
+    align-items: center;
+    height: 80px; 
+    padding: 0 2rem; 
+    background-color: rgba(30, 41, 59, 0.5); 
+    backdrop-filter: blur(5px); 
+    border-bottom: 1px solid var(--bg-tertiary); 
+    flex-shrink: 0; 
+}
+
+.logout-group {
+    display: flex;
+    align-items: center;
+    gap: 2rem; /* Info eka atharai logout button eka atharai idak */
+}
+.admin-info {
+    display: flex;
+    align-items: center;
+    color: var(--text-secondary);
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+.btn-logout {
+    padding: 0.5rem 1rem;
+    background-color: var(--bg-tertiary); /* Tikaak light background ekak */
+    color: var(--text-primary);
+    border: none;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background-color 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.btn-logout:hover {
+    background-color: #475569; /* Hover color eka */
 }
