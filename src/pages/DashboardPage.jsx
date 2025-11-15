@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo } from 'react';
-// ✅ WENAS KAMA: 'sanityClient' -> 'client' widihata import kara
 import { client } from '../sanityClient';
 import { LineChart, Line, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Package, CheckCircle, XCircle, Clock, DollarSign, ListOrdered, ShoppingBag, Truck } from 'lucide-react';
@@ -32,18 +31,28 @@ const filterDataByTime = (data, timeFilter, dateField) => {
 const DashboardPage = () => {
     const [parcels, setParcels] = useState([]);
     const [orders, setOrders] = useState([]);
+    const [foodOrders, setFoodOrders] = useState([]);
+    const [deliveryOrders, setDeliveryOrders] = useState([]);
     const [timeFilter, setTimeFilter] = useState('monthly');
 
     useEffect(() => {
         const fetchAllData = async () => {
             const parcelsQuery = `*[_type == "parcel"]{status, createdAt}`;
             const ordersQuery = `*[_type == "order"]{orderAmount, orderStatus, orderedAt, items}`;
+            const foodOrdersQuery = `*[_type == "foodOrder"]{grandTotal, deliveryCharge, orderStatus, createdAt}`;
+            const deliveryOrdersQuery = `*[_type == "deliveryOrder"]{status, createdAt}`;
             try {
-                const [parcelsData, ordersData] = await Promise.all([
-                    client.fetch(parcelsQuery), client.fetch(ordersQuery)
+                const [parcelsData, ordersData, foodOrdersData, deliveryOrdersData] = await Promise.all([
+                    client.fetch(parcelsQuery), 
+                    client.fetch(ordersQuery),
+                    client.fetch(foodOrdersQuery),
+                    client.fetch(deliveryOrdersQuery)
                 ]);
+
                 setParcels(parcelsData);
                 setOrders(ordersData);
+                setFoodOrders(foodOrdersData);
+                setDeliveryOrders(deliveryOrdersData);
             } catch (error) {
                 console.error("Failed to fetch dashboard data:", error);
             }
@@ -51,7 +60,7 @@ const DashboardPage = () => {
 
         fetchAllData();
 
-        const subscription = client.listen(`*[_type in ["parcel", "order"]]`).subscribe(() => {
+        const subscription = client.listen(`*[_type in ["parcel", "order", "foodOrder", "deliveryOrder"]]`).subscribe(() => {
             console.log("Dashboard data updated, refetching...");
             fetchAllData();
         });
@@ -62,18 +71,38 @@ const DashboardPage = () => {
     const filteredData = useMemo(() => ({
         parcels: filterDataByTime(parcels, timeFilter, 'createdAt'),
         orders: filterDataByTime(orders, timeFilter, 'orderedAt'),
-    }), [parcels, orders, timeFilter]);
+        foodOrders: filterDataByTime(foodOrders, timeFilter, 'createdAt'),
+        deliveryOrders: filterDataByTime(deliveryOrders, timeFilter, 'createdAt'),
+    }), [parcels, orders, foodOrders, deliveryOrders, timeFilter]);
 
-    const stats = useMemo(() => ({
-        delivered: filteredData.parcels.filter(p => p.status === 'Delivered').length,
-        pending: filteredData.parcels.filter(p => p.status === 'Pending' || p.status === 'In Transit').length,
-        returned: filteredData.parcels.filter(p => p.status === 'Returned').length,
-        rescheduled: filteredData.parcels.filter(p => p.status === 'Rescheduled').length,
-        totalIncome: filteredData.orders.filter(o => o.orderStatus === 'approved').reduce((sum, o) => sum + (o.orderAmount || 0), 0),
-        productsSold: filteredData.orders.filter(o => o.orderStatus === 'approved').reduce((sum, o) => sum + (o.items?.length || 0), 0),
-        completedOrders: filteredData.orders.filter(o => o.orderStatus === 'approved').length,
-        declinedOrders: filteredData.orders.filter(o => o.orderStatus === 'declined').length,
-    }), [filteredData]);
+    const stats = useMemo(() => {
+        const deliveredParcels = filteredData.parcels.filter(p => p.status === 'Delivered').length;
+        const pendingParcels = filteredData.parcels.filter(p => p.status === 'Pending' || p.status === 'In Transit').length;
+        const returnedParcels = filteredData.parcels.filter(p => p.status === 'Returned').length;
+        const rescheduledParcels = filteredData.parcels.filter(p => p.status === 'Rescheduled').length;
+        const approvedDigitalOrders = filteredData.orders.filter(o => o.orderStatus === 'approved');
+        const digitalIncome = approvedDigitalOrders.reduce((sum, o) => sum + (o.orderAmount || 0), 0);
+        const productsSold = approvedDigitalOrders.reduce((sum, o) => sum + (o.items?.length || 0), 0);
+        const declinedDigitalOrders = filteredData.orders.filter(o => o.orderStatus === 'declined').length;
+        const completedFoodOrders = filteredData.foodOrders.filter(o => o.orderStatus === 'completed');
+        const foodIncome = completedFoodOrders.reduce((sum, o) => sum + (o.grandTotal || 0), 0);
+        const adminDeliveryIncome = completedFoodOrders.reduce((sum, o) => sum + (o.deliveryCharge || 0), 0);
+        const pendingFoodOrders = filteredData.foodOrders.filter(o => ['pending', 'preparing', 'readyForPickup', 'assigned'].includes(o.orderStatus)).length;
+        const completedDeliveryReqs = filteredData.deliveryOrders.filter(o => o.status === 'completed').length;
+        const pendingDeliveryReqs = filteredData.deliveryOrders.filter(o => ['pending', 'assigned'].includes(o.status)).length;
+        
+        return {
+          totalIncome: digitalIncome + foodIncome, 
+          totalAdminDeliveryIncome: adminDeliveryIncome, 
+          totalCompletedOrders: approvedDigitalOrders.length + completedFoodOrders.length + completedDeliveryReqs,
+          totalPending: pendingParcels + pendingFoodOrders + pendingDeliveryReqs,
+          productsSold: productsSold,
+          declinedOrders: declinedDigitalOrders,
+          deliveredParcels: deliveredParcels,
+          returnedParcels: returnedParcels,
+          rescheduledParcels: rescheduledParcels,
+        };
+    }, [filteredData]);
 
     const parcelChartData = useMemo(() => {
         const counts = { Delivered: 0, Pending: 0, "In Transit": 0, Returned: 0, Rescheduled: 0 };
@@ -90,11 +119,18 @@ const DashboardPage = () => {
         const salesByDay = {};
         filteredData.orders.filter(o => o.orderStatus === 'approved').forEach(o => {
             const day = new Date(o.orderedAt).toLocaleDateString('en-CA');
-            if (!salesByDay[day]) salesByDay[day] = 0;
-            salesByDay[day] += o.orderAmount;
+            if (!salesByDay[day]) salesByDay[day] = { sales: 0 };
+            salesByDay[day].sales += (o.orderAmount || 0);
         });
-        return Object.keys(salesByDay).map(day => ({ name: day, sales: salesByDay[day] })).sort((a, b) => new Date(a.name) - new Date(b.name));
-    }, [filteredData.orders]);
+        
+        filteredData.foodOrders.filter(o => o.orderStatus === 'completed').forEach(o => {
+            const day = new Date(o.createdAt).toLocaleDateString('en-CA');
+            if (!salesByDay[day]) salesByDay[day] = { sales: 0 };
+            salesByDay[day].sales += (o.grandTotal || 0);
+        });
+
+        return Object.keys(salesByDay).map(day => ({ name: day, sales: salesByDay[day].sales })).sort((a, b) => new Date(a.name) - new Date(b.name));
+    }, [filteredData.orders, filteredData.foodOrders]);
 
     return (
         <div className={styles.dashboardContent}>
@@ -108,24 +144,49 @@ const DashboardPage = () => {
             </div>
             
             <div className={styles.summaryGrid}>
-                <div className={styles.summaryCard}><CheckCircle color="#22C55E"/><div><span>Delivered Parcels</span><strong>{stats.delivered}</strong></div></div>
-                <div className={styles.summaryCard}><DollarSign color="#22C55E"/><div><span>Total Income</span><strong>Rs. {stats.totalIncome.toFixed(2)}</strong></div></div>
-                <div className={styles.summaryCard}><ShoppingBag color="#A855F7"/><div><span>Products Sold</span><strong>{stats.productsSold}</strong></div></div>
-                <div className={styles.summaryCard}><ListOrdered color="#14B8A6"/><div><span>Completed Orders</span><strong>{stats.completedOrders}</strong></div></div>
-                <div className={styles.summaryCard}><Truck color="#3B82F6"/><div><span>Pending/Transit</span><strong>{stats.pending}</strong></div></div>
-                <div className={styles.summaryCard}><Clock color="#64748B"/><div><span>Rescheduled</span><strong>{stats.rescheduled}</strong></div></div>
-                <div className={styles.summaryCard}><XCircle color="#EF4444"/><div><span>Returned Parcels</span><strong>{stats.returned}</strong></div></div>
-                <div className={styles.summaryCard}><XCircle color="#EF4444"/><div><span>Declined Orders</span><strong>{stats.declinedOrders}</strong></div></div>
+            
+                <div className={styles.summaryCard}><DollarSign color="#22C55E"/><div>
+                    <span>Total Income (All)</span><strong>Rs. {stats.totalIncome.toFixed(2)}</strong>
+                </div></div>
+                
+                <div className={styles.summaryCard}><DollarSign color="#14B8A6"/><div>
+                    <span>Admin Delivery Income</span><strong>Rs. {stats.totalAdminDeliveryIncome.toFixed(2)}</strong>
+                </div></div>
+
+                <div className={styles.summaryCard}><CheckCircle color="#22C55E"/><div>
+                    <span>Total Completed Orders</span><strong>{stats.totalCompletedOrders}</strong>
+                </div></div>
+
+                <div className={styles.summaryCard}><Truck color="#3B82F6"/><div>
+                    <span>Total Pending Orders</span><strong>{stats.totalPending}</strong>
+                </div></div>
+                
+                <div className={styles.summaryCard}><ShoppingBag color="#A855F7"/><div>
+                    <span>Products Sold (Digital)</span><strong>{stats.productsSold}</strong>
+                </div></div>
+
+                <div className={styles.summaryCard}><Package color="#64748B"/><div>
+                    <span>Delivered Parcels</span><strong>{stats.deliveredParcels}</strong>
+                </div></div>
+
+                <div className={styles.summaryCard}><XCircle color="#EF4444"/><div>
+                    <span>Returned Parcels</span><strong>{stats.returnedParcels}</strong>
+                </div></div>
+                
+                <div className={styles.summaryCard}><XCircle color="#EF4444"/><div>
+                    <span>Declined Digital Orders</span><strong>{stats.declinedOrders}</strong>
+                </div></div>
+
             </div>
 
             <div className={styles.chartsGrid}>
-                 <div className="chart-container">
+                <div className={styles.chartContainer}> 
                     <h3>Parcel Summary ({timeFilter})</h3>
                     <ResponsiveContainer width="100%" height={300}>
                         <BarChart data={parcelChartData}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="name" /><YAxis /><Tooltip contentStyle={{ backgroundColor: '#1E293B' }} /><Legend /><Bar dataKey="count" fill="#3B82F6" /></BarChart>
                     </ResponsiveContainer>
-                 </div>
-                 <div className="chart-container">
+                </div>
+                <div className={styles.chartContainer}>
                     <h3>Sales Growth ({timeFilter})</h3>
                     <ResponsiveContainer width="100%" height={300}>
                         <LineChart data={salesChartData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
@@ -144,7 +205,7 @@ const DashboardPage = () => {
                             <Line type="monotone" dataKey="sales" stroke="#22C55E" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 8 }} />
                         </LineChart>
                     </ResponsiveContainer>
-                 </div>
+                </div>
             </div>
         </div>
     );

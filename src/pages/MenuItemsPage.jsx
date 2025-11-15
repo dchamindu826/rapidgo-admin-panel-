@@ -3,9 +3,8 @@ import { client, urlFor } from '../sanityClient';
 import { PlusCircle, ArrowLeft, Edit, Trash2 } from 'lucide-react';
 import styles from './FormPages.module.css';
 
-// The MenuItemForm component remains unchanged from the previous version.
+// The MenuItemForm component
 const MenuItemForm = ({ onBack, onSave, itemToEdit }) => {
-    // ... (This component's code is the same as the last version with inline category creation)
     const [formData, setFormData] = useState({ name: '', price: '', description: '', restaurant: '' });
     const [selectedCategories, setSelectedCategories] = useState([]);
     const [imageFile, setImageFile] = useState(null);
@@ -160,7 +159,6 @@ export default function MenuItemsPage() {
     const [loading, setLoading] = useState(true);
     const [itemToEdit, setItemToEdit] = useState(null);
     
-    // --- NEW STATE FOR FILTERING ---
     const [restaurants, setRestaurants] = useState([]);
     const [selectedRestaurant, setSelectedRestaurant] = useState('all');
 
@@ -184,7 +182,6 @@ export default function MenuItemsPage() {
         client.fetch(`*[_type == "restaurant"] | order(name asc)`).then(setRestaurants);
     }, [fetchItems]);
     
-    // --- FILTERING LOGIC ---
     const filteredItems = useMemo(() => {
         if (selectedRestaurant === 'all') {
             return menuItems;
@@ -207,7 +204,6 @@ export default function MenuItemsPage() {
         <div className="content-box">
             <div className="content-box-header">
                 <h2>Menu Items</h2>
-                {/* --- RESTAURANT FILTER DROPDOWN --- */}
                 <div className={styles.filterWrapper}>
                     <select value={selectedRestaurant} onChange={e => setSelectedRestaurant(e.target.value)}>
                         <option value="all">All Restaurants</option>
@@ -220,23 +216,24 @@ export default function MenuItemsPage() {
             </div>
             <div className="table-container">
                 <table className="data-table">
+                    {/* === MEKA THAMAI WENAS KALE (Comments AIN KALA) === */}
                     <thead>
                         <tr>
                             <th>Image</th>
                             <th>Name</th>
                             <th>Restaurant</th>
-                            <th>Categories</th> {/* <-- NEW COLUMN */}
+                            <th>Categories</th>
                             <th>Price</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
+                    {/* ============================================== */}
                     <tbody>
                         {filteredItems.map(item => (
                             <tr key={item._id}>
                                 <td><img src={item.image ? urlFor(item.image).width(50).url() : 'https://placehold.co/50'} alt={item.name} className={styles.tableImage} /></td>
                                 <td>{item.name}</td>
                                 <td>{item.restaurant?.name || 'N/A'}</td>
-                                {/* --- DISPLAY CATEGORIES --- */}
                                 <td>
                                     <div className={styles.categoryCell}>
                                         {item.categories?.map(cat => <span key={cat._id} className={styles.categoryBadge}>{cat.title}</span>)}

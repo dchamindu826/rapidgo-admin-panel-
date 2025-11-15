@@ -15,21 +15,31 @@ import DigitalOrdersPage from './pages/DigitalOrdersPage';
 import FoodOrdersPage from './pages/FoodOrdersPage';
 import RestaurantsPage from './pages/RestaurantsPage';
 import MenuItemsPage from './pages/MenuItemsPage';
+import WithdrawalRequestsPage from './pages/WithdrawalRequestsPage';
+import ReportsPage from './pages/ReportsPage';
+import RestaurantStaffPage from './pages/RestaurantStaffPage';
+import AnnouncementsPage from './pages/AnnouncementsPage';
+import ProfitReportPage from './pages/ProfitReportPage';
 
 const Header = ({ title }) => (<header className="main-header"><h1>{title}</h1></header>);
 
 const PageRenderer = ({ pageName }) => {
     switch (pageName) {
         case 'Dashboard': return <DashboardPage />;
+        case 'Profit Report': return <ProfitReportPage />;
+        case 'Announcements': return <AnnouncementsPage />;
         case 'Products': return <ProductPage />;
         case 'Delivery Requests': return <DeliveryRequestsPage />;
         case 'Categories': return <CategoriesPage />;
         case 'Riders': return <RiderPage />;
+        case 'Payouts': return <WithdrawalRequestsPage />;
         case 'Parcels': return <ParcelPage />;
         case 'Admins': return <AdminPage />;
         case 'Digital Orders': return <DigitalOrdersPage />;
         case 'Food Orders': return <FoodOrdersPage />;
         case 'Restaurants': return <RestaurantsPage />;
+        case 'Restaurant Staff': return <RestaurantStaffPage />
+        case 'Reports': return <ReportsPage />;
         case 'Menu Items': return <MenuItemsPage />;
         default: return <DashboardPage />;
     }
@@ -120,4 +130,3 @@ export default function App() {
         </div>
     );
 }
-

@@ -41,3 +41,50 @@
     gap: 0.5rem;
     font-size: 0.9rem;
 }
+
+/* --- Withdrawal Page Buttons (New Style) --- */
+.approveButton, .declineButton {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-weight: 500;
+    margin-right: 1rem;
+    padding: 4px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem; /* Icon එකයි text එකයි අතර පොඩි ඉඩක් */
+    font-size: 0.9rem;
+    transition: filter 0.2s; /* Hover effect එකක් */
+}
+.approveButton {
+    color: #22C55E; /* Bright Green */
+}
+.approveButton:hover {
+    filter: brightness(1.2); /* ටිකක් glow වෙනවා */
+}
+.declineButton {
+    color: #F87171; /* Bright Red */
+}
+.declineButton:hover {
+    filter: brightness(1.2); /* ටිකක් glow වෙනවා */
+}
+
+/* --- Wallet Balance on Card --- */
+.walletBalance {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    padding: 0.5rem;
+    background-color: var(--bg-tertiary);
+    border-radius: 5px;
+}
+.walletBalance svg {
+    color: #22C55E; /* Green */
+    flex-shrink: 0;
+}
+.walletBalance span {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}

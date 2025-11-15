@@ -66,3 +66,15 @@
         grid-template-columns: 1fr;
     }
 }
+
+/* MEKA THAMAYI ALUTHEN ADD KALE */
+.chartContainer {
+  background-color: var(--bg-secondary);
+  padding: 1.5rem;
+  border-radius: 0.75rem;
+}
+
+.chartContainer h3 {
+  margin: 0 0 1rem 0;
+  font-weight: 600;
+}

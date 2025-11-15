@@ -1,13 +1,11 @@
-// src/pages/RiderPage.jsx (FIXED)
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { client, urlFor } from '../sanityClient';
 import { districts } from '../constants/districts';
-import { PlusCircle, ArrowLeft, X as CloseIcon } from 'lucide-react';
+import { PlusCircle, ArrowLeft, X as CloseIcon, Wallet } from 'lucide-react'; // <-- Wallet icon eka add kara
 import styles from './RiderPage.module.css';
 
 // ====================================================================
-// === Rider Details Modal Component (with image checks) ===
+// === Rider Details Modal Component (Wenasak Ne) ===
 // ====================================================================
 const RiderDetailModal = ({ rider, onClose }) => (
     <div className={styles.modalBackdrop} onClick={onClose}>
@@ -52,7 +50,7 @@ const RiderDetailModal = ({ rider, onClose }) => (
 );
 
 // ====================================================================
-// === Rider Form Component (Complete) ===
+// === Rider Form Component (Wenasak Ne) ===
 // ====================================================================
 const RiderForm = ({ onBack, onSave, riderToEdit }) => {
     const [formData, setFormData] = useState({ fullName: '', riderId: '', idNumber: '', address: '', phone: '', vehicleType: 'Motorbike', vehicleNumber: '', username: '', password: '' });
@@ -65,7 +63,7 @@ const RiderForm = ({ onBack, onSave, riderToEdit }) => {
             setFormData({
                 fullName: riderToEdit.fullName || '', riderId: riderToEdit.riderId || '', idNumber: riderToEdit.idNumber || '',
                 address: riderToEdit.address || '', phone: riderToEdit.phone || '', vehicleType: riderToEdit.vehicleType || 'Motorbike',
-                vehicleNumber: riderToEdit.vehicleNumber || '', username: riderToEdit.username || '', password: '',
+                vehicleNumber: riderToEdit.vehicleNumber || '', username: riderToEdit.username.current || '', password: '', // username.current kara
             });
             setServiceAreas(riderToEdit.serviceAreas || []);
         }
@@ -172,7 +170,7 @@ const RiderForm = ({ onBack, onSave, riderToEdit }) => {
 
 
 // ====================================================================
-// === Main Rider Page Component (Final) ===
+// === Main Rider Page Component (WENAS KALA) ===
 // ====================================================================
 export default function RiderPage() {
     const [view, setView] = useState('cards');
@@ -183,7 +181,8 @@ export default function RiderPage() {
 
     const fetchRiders = useCallback(() => {
         setLoading(true);
-        client.fetch(`*[_type == "rider"]{..., "username": username.current} | order(fullName asc)`)
+        // --- 1. walletBalance eka query ekata add kara ---
+        client.fetch(`*[_type == "rider"]{..., "username": username.current, walletBalance} | order(fullName asc)`)
             .then(data => { setRiders(data); setLoading(false); }).catch(console.error);
     }, []);
 
@@ -219,6 +218,13 @@ export default function RiderPage() {
                             <h3 onClick={() => setSelectedRider(rider)}>{rider.fullName}</h3>
                             <span>ID: {rider.riderId}</span>
                             <span>Phone: {rider.phone}</span>
+
+                            {/* --- 2. Wallet Balance eka methana pennanawa --- */}
+                            <div className={styles.walletBalance}>
+                                <Wallet size={16} />
+                                <span>Rs. {rider.walletBalance?.toFixed(2) || '0.00'}</span>
+                            </div>
+                            
                             <div className={styles.cardDistricts}>
                                 {rider.serviceAreas?.map(d => <span key={d} className={styles.districtBadge}>{d}</span>)}
                             </div>
