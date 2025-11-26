@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { client } from '../sanityClient';
 import styles from './FoodOrdersPage.module.css';
-import { User, MapPin, Phone, Clock, RefreshCw, CheckCircle, Truck, XCircle, Package, DollarSign } from 'lucide-react';
+import { 
+    User, MapPin, Phone, Clock, RefreshCw, CheckCircle, 
+    Truck, XCircle, Package, DollarSign, Power 
+} from 'lucide-react';
 
 // --- Order Details & Rider Assignment Modal ---
 const OrderDetailsModal = ({ order, onClose, onUpdate }) => {
@@ -10,7 +13,7 @@ const OrderDetailsModal = ({ order, onClose, onUpdate }) => {
     const [isAssigning, setIsAssigning] = useState(false);
 
     useEffect(() => {
-        // --- FIX: Fetch ALL riders, not just 'online' ones ---
+        // Fetch ALL riders
         client.fetch(`*[_type == "rider"]{_id, fullName, availability}`).then(setRiders);
     }, []);
 
@@ -74,6 +77,34 @@ export default function FoodOrdersPage() {
     const [activeTab, setActiveTab] = useState('new');
     const [filterRange, setFilterRange] = useState('today');
 
+    // --- ALUTH STATE: Delivery On/Off ---
+    const [isDeliveryOpen, setIsDeliveryOpen] = useState(true);
+    const [settingsLoading, setSettingsLoading] = useState(false);
+
+    // --- 1. Settings Load කරනවා ---
+    useEffect(() => {
+        const fetchSettings = async () => {
+            try {
+                const query = `*[_type == "siteSettings" && _id == "general-settings"][0]`;
+                const data = await client.fetch(query);
+                if (data) {
+                    setIsDeliveryOpen(data.isFoodDeliveryOpen);
+                } else {
+                    // Data නැත්නම් අලුතෙන් හදනවා
+                    await client.createIfNotExists({
+                        _id: 'general-settings',
+                        _type: 'siteSettings',
+                        isFoodDeliveryOpen: true
+                    });
+                }
+            } catch (err) {
+                console.error("Error fetching settings:", err);
+            }
+        };
+        fetchSettings();
+    }, []);
+
+    // --- 2. Orders Load කරනවා ---
     const fetchOrders = useCallback(() => {
         setLoading(true);
         const query = `*[_type == "foodOrder"]{..., "restaurant": restaurant->{name}, "orderedItems": orderedItems[]{..., "item": item->}, "assignedRider": assignedRider->} | order(createdAt desc)`;
@@ -88,6 +119,25 @@ export default function FoodOrdersPage() {
         const subscription = client.listen('*[_type == "foodOrder"]').subscribe(() => fetchOrders());
         return () => subscription.unsubscribe();
     }, [fetchOrders]);
+
+    // --- 3. Delivery Status මාරු කරන Function එක ---
+    const toggleDeliveryStatus = async () => {
+        const newStatus = !isDeliveryOpen;
+        if(window.confirm(`Are you sure you want to turn Food Delivery ${newStatus ? 'ON' : 'OFF'}?`)) {
+            setSettingsLoading(true);
+            try {
+                await client.patch('general-settings')
+                    .set({ isFoodDeliveryOpen: newStatus })
+                    .commit();
+                setIsDeliveryOpen(newStatus);
+            } catch (err) {
+                alert("Failed to update status");
+                console.error(err);
+            } finally {
+                setSettingsLoading(false);
+            }
+        }
+    };
     
     const { filteredOrders, totalIncome, totalOrders } = useMemo(() => {
         const now = new Date();
@@ -124,9 +174,33 @@ export default function FoodOrdersPage() {
     return (
         <div className="content-box">
             {selectedOrder && <OrderDetailsModal order={selectedOrder} onClose={() => setSelectedOrder(null)} onUpdate={fetchOrders} />}
-            <div className="content-box-header">
+            
+            <div className="content-box-header" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
                 <h2>Food Orders Dashboard</h2>
+                
+                {/* --- ALUTH SWITCH BUTTON EKA --- */}
+                <button 
+                    onClick={toggleDeliveryStatus} 
+                    disabled={settingsLoading}
+                    style={{
+                        backgroundColor: isDeliveryOpen ? '#22C55E' : '#EF4444',
+                        color: 'white',
+                        border: 'none',
+                        padding: '10px 20px',
+                        borderRadius: '8px',
+                        fontWeight: 'bold',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        fontSize: '0.9rem'
+                    }}
+                >
+                    <Power size={18} />
+                    {settingsLoading ? 'Updating...' : (isDeliveryOpen ? 'Delivery is ON' : 'Delivery is OFF')}
+                </button>
             </div>
+
             <div className={styles.dashboard}>
                 <div className={styles.filters}>
                     <button onClick={() => setFilterRange('today')} className={filterRange === 'today' ? styles.activeFilter : ''}>Today</button>
@@ -151,7 +225,7 @@ export default function FoodOrdersPage() {
                 <button onClick={() => setActiveTab('completed')} className={`tab-button ${activeTab === 'completed' ? 'active' : ''}`}>Completed / Cancelled</button>
             </div>
             <div className={styles.orderGrid}>
-                {loading ? <p>Loading...</p> : filteredOrders.map(order => (
+                {loading ? <p style={{padding: '20px'}}>Loading...</p> : filteredOrders.map(order => (
                     <div key={order._id} className={styles.orderCard}>
                         <div className={styles.cardHeader}>
                             <strong>Order for {order.receiverName}</strong>
@@ -185,4 +259,3 @@ export default function FoodOrdersPage() {
         </div>
     );
 }
-

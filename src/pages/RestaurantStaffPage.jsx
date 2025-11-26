@@ -1,3 +1,5 @@
+// src/pages/RestaurantStaffPage.jsx
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { client } from '../sanityClient';
 import { PlusCircle, ArrowLeft, Edit, Trash2 } from 'lucide-react';
@@ -22,7 +24,7 @@ const StaffForm = ({ onBack, onSave, staffToEdit }) => {
         if (staffToEdit) {
             setFormData({
                 email: staffToEdit.email || '',
-                password: '', // Password eka edit waladi his karala thiyanne
+                password: '', // Password eka edit waladi his karala thiyanne (Security nisa)
                 role: staffToEdit.role || 'Staff',
                 restaurant: staffToEdit.restaurant?._ref || ''
             });
@@ -90,8 +92,13 @@ const StaffForm = ({ onBack, onSave, staffToEdit }) => {
                 </div>
                 <div className="form-group">
                     <label>Password</label>
-                    <input type="password" name="password" value={formData.password} 
-                           placeholder={staffToEdit ? 'Leave blank to keep unchanged' : 'Enter new password'} 
+                    {/* --- WENAS KAMA: Methanata onChange={handleChange} add kala --- */}
+                    <input 
+                        type="password" 
+                        name="password" 
+                        value={formData.password} 
+                        onChange={handleChange} 
+                        placeholder={staffToEdit ? 'Leave blank to keep unchanged' : 'Enter new password'} 
                     />
                 </div>
                 <div className="form-group">

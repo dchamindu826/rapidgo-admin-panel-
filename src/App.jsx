@@ -1,6 +1,9 @@
+// src/App.jsx (Admin Panel)
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import './Admin.css';
-import { LogOut, User } from 'lucide-react'; // <-- LogOut icon eka methanata genawa
+import { LogOut, User } from 'lucide-react';
+import { client } from './sanityClient'; // client import එක එකතු කළා
 
 // Import Pages & Components
 import LoginPage from './pages/LoginPage';
@@ -22,15 +25,13 @@ import RestaurantStaffPage from './pages/RestaurantStaffPage';
 import AnnouncementsPage from './pages/AnnouncementsPage';
 import ProfitReportPage from './pages/ProfitReportPage';
 
-
-// --- Header Component eka FIX KALA ---
+// --- Header Component ---
 const Header = ({ title, onLogout, admin }) => (
     <header className="main-header">
         <h1>{title}</h1>
         <div className="logout-group">
             <div className="admin-info">
                 <User size={16} /> 
-                {/* === FIX: Optional Chaining (?) add kara === */}
                 <span>{admin?.fullName || 'Admin'} ({admin?.role || 'N/A'})</span>
             </div>
             <button className="btn-logout" onClick={onLogout}>
@@ -40,8 +41,6 @@ const Header = ({ title, onLogout, admin }) => (
         </div>
     </header>
 );
-// ----------------------------------------------------------------------
-
 
 const PageRenderer = ({ pageName }) => {
     switch (pageName) {
@@ -73,6 +72,45 @@ export default function App() {
     
     const logoutTimerId = useRef(null);
 
+    // --- AUTO-CANCEL LOGIC (New Feature) ---
+    useEffect(() => {
+        // විනාඩි 20කට වඩා පරණ Pending Orders සොයා Cancel කරන Function එක
+        const checkAndCancelStaleOrders = async () => {
+            try {
+                // 1. Pending Orders ගන්න
+                const pendingOrders = await client.fetch('*[_type == "foodOrder" && orderStatus == "pending"]{_id, createdAt}');
+                
+                const now = new Date();
+                const AUTO_CANCEL_MINUTES = 20;
+
+                pendingOrders.forEach(async (order) => {
+                    const orderTime = new Date(order.createdAt);
+                    const diffInMinutes = (now - orderTime) / 1000 / 60; // විනාඩි ගණන
+
+                    if (diffInMinutes > AUTO_CANCEL_MINUTES) {
+                        console.log(`Auto-cancelling order ${order._id} due to timeout.`);
+                        
+                        // 2. Order එක Cancel කරන්න Patch එකක් යවන්න
+                        await client.patch(order._id).set({ 
+                            orderStatus: 'cancelled',
+                            notes: 'Auto-cancelled: Restaurant did not respond in 20 mins.' 
+                        }).commit();
+                    }
+                });
+            } catch (error) {
+                console.error("Auto-cancel check failed:", error);
+            }
+        };
+
+        // Admin Panel එක Open වෙලා තියෙනකොට හැම විනාඩියකට සැරයක්ම මේක Run වෙනවා
+        if (loggedInAdmin) {
+            const intervalId = setInterval(checkAndCancelStaleOrders, 60000); // Every 1 minute
+            checkAndCancelStaleOrders(); // Initial check
+            return () => clearInterval(intervalId);
+        }
+    }, [loggedInAdmin]);
+    // ---------------------------------------
+
     const handleLogout = useCallback(() => {
         sessionStorage.removeItem('adminUser');
         setLoggedInAdmin(null);
@@ -88,17 +126,14 @@ export default function App() {
         logoutTimerId.current = setTimeout(() => {
             alert("You have been logged out due to 5 minutes of inactivity.");
             handleLogout();
-        }, 5 * 60 * 1000); // 5 minutes in milliseconds
+        }, 5 * 60 * 1000); // 5 minutes
     }, [handleLogout]);
 
     useEffect(() => {
         if (loggedInAdmin) {
             const events = ['mousemove', 'keydown', 'click', 'scroll'];
             events.forEach(event => window.addEventListener(event, resetTimer));
-
-            // Component mount una gaman timer eka start karanawa
             resetTimer(); 
-
             return () => {
                 events.forEach(event => window.removeEventListener(event, resetTimer));
                 if (logoutTimerId.current) {
@@ -115,7 +150,7 @@ export default function App() {
                 setLoggedInAdmin(JSON.parse(savedAdmin));
             }
         } catch (error) {
-            console.error("Failed to parse admin user from sessionStorage", error);
+            console.error("Failed to parse admin user", error);
             sessionStorage.removeItem('adminUser');
         }
         setIsLoading(false);
