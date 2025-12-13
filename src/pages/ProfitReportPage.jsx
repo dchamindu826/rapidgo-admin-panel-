@@ -4,8 +4,8 @@ import styles from './ProfitReportPage.module.css';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { ArrowUpCircle, ArrowDownCircle, DollarSign, ListOrdered } from 'lucide-react';
 
-// Admin Commission eka (30%)
-const ADMIN_COMMISSION_RATE = 0.30;
+// Admin Commission eka (35%) - UPDATED HERE
+const ADMIN_COMMISSION_RATE = 0.35;
 
 // Mase anthima data eka ganna helper function ekak
 const getDaysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
@@ -113,12 +113,14 @@ export default function ProfitReportPage() {
             {/* --- Summary Cards --- */}
             <div className={styles.summaryGrid}>
                 <div className={styles.summaryCard}>
-                    <span>This Month's Profit (30%)</span>
+                    {/* Label updated to reflect 35% */}
+                    <span>This Month's Profit (35%)</span>
                     <strong>Rs. {currentMonthData?.totalProfit.toFixed(2)}</strong>
                     <small>{currentMonthData?.totalOrders} completed orders</small>
                 </div>
                 <div className={styles.summaryCard}>
-                    <span>Last Month's Profit (30%)</span>
+                    {/* Label updated to reflect 35% */}
+                    <span>Last Month's Profit (35%)</span>
                     <strong>Rs. {lastMonthData?.totalProfit.toFixed(2)}</strong>
                     <small>{lastMonthData?.totalOrders} completed orders</small>
                 </div>
@@ -138,9 +140,7 @@ export default function ProfitReportPage() {
                     <BarChart data={currentMonthData?.chartData}>
                         <CartesianGrid strokeDasharray="3 3" stroke={styles.chartGridColor} />
                         
-                        {/* === MEKA THAMAI WENAS KALE === */}
                         <XAxis dataKey="name" stroke={styles.chartTextColor} interval={2} />
-                        {/* ============================== */}
 
                         <YAxis stroke={styles.chartTextColor} />
                         <Tooltip

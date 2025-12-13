@@ -1,198 +1,265 @@
-import React, { useState, useEffect } from 'react';
-import { client } from '../sanityClient';
-import styles from './ReportsPage.module.css'; // Meka api aluthen hadamu
-import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
+import React, { useState, useEffect, useCallback } from 'react';
+import { client, urlFor } from '../sanityClient';
+import { PlusCircle, ArrowLeft, Edit, Trash2, DollarSign } from 'lucide-react';
+import styles from './FormPages.module.css';
 
-// Pie chart eka random colors denna
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#A28CFE', '#FF6666'];
+// ==========================================================
+// === Payout Modal Component ===
+// ==========================================================
+const PayoutModal = ({ restaurant, onClose, onPayoutSuccess }) => {
+    const [amount, setAmount] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
-export default function ReportsPage() {
-    const [restaurants, setRestaurants] = useState([]);
-    const [selectedRestaurant, setSelectedRestaurant] = useState('');
-    const [startDate, setStartDate] = useState('');
-    const [endDate, setEndDate] = useState('');
-    
-    const [reportData, setReportData] = useState(null);
-    const [loading, setLoading] = useState(false);
-
-    // Load all restaurants for the dropdown
-    useEffect(() => {
-        client.fetch(`*[_type == "restaurant"]{_id, name} | order(name asc)`).then(setRestaurants);
-    }, []);
-
-    const handleGenerateReport = async () => {
-        if (!selectedRestaurant || !startDate || !endDate) {
-            alert("Please select a restaurant, start date, and end date.");
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        const payoutAmount = parseFloat(amount);
+        if (!payoutAmount || payoutAmount <= 0) {
+            return alert("Please enter a valid amount.");
+        }
+        
+        if (!window.confirm(`Are you sure you want to log a payout of Rs. ${payoutAmount} to ${restaurant.name}?`)) {
             return;
         }
-        setLoading(true);
-        setReportData(null);
 
-        // Date range eka set karanna
-        const start = new Date(startDate).toISOString();
-        const end = new Date(endDate);
-        end.setHours(23, 59, 59); // End date eke awasana winadiya wenakam
-        const endISO = end.toISOString();
-
-        const query = `
-            *[_type == 'foodOrder' && 
-              restaurant._ref == $restaurantId && 
-              orderStatus == 'completed' &&
-              createdAt >= $startDate && 
-              createdAt <= $endDate
-            ] {
-              _id,
-              createdAt,
-              grandTotal,
-              deliveryCharge,
-              foodTotal,
-              "items": orderedItems[]{
-                _key,
-                quantity,
-                "name": item->name
-              }
-            }
-        `;
-        
+        setIsSubmitting(true);
         try {
-            const orders = await client.fetch(query, { 
-                restaurantId: selectedRestaurant, 
-                startDate: start, 
-                endDate: endISO 
-            });
-
-            // --- DATA ANALYSIS ---
-            let totalRevenue = 0;
-            let totalDeliveryFees = 0;
-            let totalFoodValue = 0;
-            const itemCounts = {};
-
-            orders.forEach(order => {
-                totalRevenue += order.grandTotal;
-                totalDeliveryFees += order.deliveryCharge;
-                totalFoodValue += order.foodTotal;
-
-                order.items.forEach(item => {
-                    itemCounts[item.name] = (itemCounts[item.name] || 0) + item.quantity;
-                });
-            });
-
-            const topItems = Object.entries(itemCounts)
-                .map(([name, count]) => ({ name, count }))
-                .sort((a, b) => b.count - a.count)
-                .slice(0, 10); // Top 10 items
-
-            setReportData({
-                totalOrders: orders.length,
-                totalRevenue,
-                totalDeliveryFees,
-                totalFoodValue,
-                topItems,
-                restaurantName: restaurants.find(r => r._id === selectedRestaurant)?.name,
-                period: `${startDate} to ${endDate}`
-            });
+            await client
+                .patch(restaurant._id)
+                .inc({ totalPayouts: payoutAmount })
+                .commit();
+            
+            alert('Payout logged successfully!');
+            onPayoutSuccess(); 
+            onClose(); 
 
         } catch (error) {
-            console.error("Failed to generate report:", error);
-            alert("Failed to load report data.");
+            console.error("Failed to log payout:", error);
+            alert("Failed to log payout. Check console for errors.");
         } finally {
-            setLoading(false);
+            setIsSubmitting(false);
         }
     };
 
     return (
-        <div className={styles.reportsPage}>
-            {/* --- 1. FILTERS --- */}
-            <div className={`content-box ${styles.filtersBox}`}>
-                <div className="content-box-header">
-                    <h2>Generate Restaurant Report</h2>
-                </div>
-                <div className={styles.filtersBody}>
-                    <div className="form-group">
-                        <label>Select Restaurant</label>
-                        <select value={selectedRestaurant} onChange={(e) => setSelectedRestaurant(e.target.value)}>
-                            <option value="" disabled>-- Select Restaurant --</option>
-                            {restaurants.map(r => <option key={r._id} value={r._id}>{r.name}</option>)}
-                        </select>
+        <div className="modal-backdrop" onClick={onClose}>
+            <div className="modal-content" onClick={e => e.stopPropagation()}>
+                <form onSubmit={handleSubmit}>
+                    <div className="modal-header">
+                        <h2>Log Payout for {restaurant.name}</h2>
+                        <button type="button" onClick={onClose} className="modal-close">×</button>
                     </div>
-                    <div className="form-group">
-                        <label>Start Date</label>
-                        <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+                    <div className="modal-body">
+                        <p>Current Total Paid: <strong>Rs. {restaurant.totalPayouts?.toFixed(2) || '0.00'}</strong></p>
+                        <div className="form-group">
+                            <label>Payout Amount (Rs.)</label>
+                            <input
+                                type="number"
+                                step="0.01"
+                                placeholder="Enter amount paid"
+                                value={amount}
+                                onChange={(e) => setAmount(e.target.value)}
+                                required
+                            />
+                        </div>
                     </div>
-                    <div className="form-group">
-                        <label>End Date</label>
-                        <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+                    <div className="modal-footer">
+                        <button type="button" className="btn-secondary" onClick={onClose} disabled={isSubmitting}>
+                            Cancel
+                        </button>
+                        <button type="submit" className="btn-primary" disabled={isSubmitting}>
+                            {isSubmitting ? 'Logging...' : 'Log Payout'}
+                        </button>
                     </div>
-                    <button className="btn-primary" onClick={handleGenerateReport} disabled={loading}>
-                        {loading ? 'Generating...' : 'Generate Report'}
-                    </button>
-                </div>
+                </form>
             </div>
+        </div>
+    );
+};
 
-            {/* --- 2. REPORT DISPLAY --- */}
-            {loading && <p className={styles.loadingText}>Loading report...</p>}
+
+// ==========================================================
+// === Restaurant Form Component ===
+// ==========================================================
+const RestaurantForm = ({ onBack, onSave, restaurantToEdit }) => {
+    const [formData, setFormData] = useState({ name: '', description: '', phone: '', addressText: '' });
+    const [logoFile, setLogoFile] = useState(null);
+    const [coverImageFile, setCoverImageFile] = useState(null); // --- NEW STATE FOR COVER IMAGE ---
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    useEffect(() => {
+        if (restaurantToEdit) {
+            setFormData({
+                name: restaurantToEdit.name || '',
+                description: restaurantToEdit.description || '',
+                phone: restaurantToEdit.phone || '',
+                addressText: restaurantToEdit.addressText || ''
+            });
+        }
+    }, [restaurantToEdit]);
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setIsSubmitting(true);
+        try {
+            // --- 1. Handle Logo Upload ---
+            let logoAssetRef;
+            if (logoFile) {
+                const uploadedLogo = await client.assets.upload('image', logoFile);
+                logoAssetRef = { _type: 'image', asset: { _type: 'reference', _ref: uploadedLogo._id } };
+            }
+
+            // --- 2. Handle Cover Image Upload (NEW) ---
+            let coverImageAssetRef;
+            if (coverImageFile) {
+                const uploadedCover = await client.assets.upload('image', coverImageFile);
+                coverImageAssetRef = { _type: 'image', asset: { _type: 'reference', _ref: uploadedCover._id } };
+            }
             
-            {reportData && (
-                <div className={`content-box ${styles.reportContainer}`}>
-                    <div className="content-box-header">
-                        <h2>Report for {reportData.restaurantName}</h2>
-                        <span>{reportData.period}</span>
-                    </div>
+            const doc = {
+                _type: 'restaurant',
+                name: formData.name,
+                description: formData.description,
+                phone: formData.phone,
+                addressText: formData.addressText,
+                slug: { _type: 'slug', current: formData.name.toLowerCase().replace(/\s+/g, '-') },
+                
+                // Add images only if new files were uploaded
+                ...(logoAssetRef && { logo: logoAssetRef }),
+                ...(coverImageAssetRef && { coverImage: coverImageAssetRef }),
+            };
 
-                    {/* --- Summary Cards --- */}
-                    <div className={styles.summaryGrid}>
-                        <div className={styles.summaryCard}>
-                            <span>Total Orders</span>
-                            <strong>{reportData.totalOrders}</strong>
-                        </div>
-                        <div className={styles.summaryCard}>
-                            <span>Total Revenue</span>
-                            <strong>Rs. {reportData.totalRevenue.toFixed(2)}</strong>
-                        </div>
-                        <div className={styles.summaryCard}>
-                            <span>Total Food Value</span>
-                            <strong>Rs. {reportData.totalFoodValue.toFixed(2)}</strong>
-                        </div>
-                        <div className={styles.summaryCard}>
-                            <span>Admin Delivery Fees</span>
-                            <strong>Rs. {reportData.totalDeliveryFees.toFixed(2)}</strong>
-                        </div>
-                    </div>
+            if (restaurantToEdit) {
+                await client.patch(restaurantToEdit._id).set(doc).commit();
+            } else {
+                await client.create(doc);
+            }
+            alert(`Restaurant ${restaurantToEdit ? 'updated' : 'created'} successfully!`);
+            onSave();
+            onBack();
+        } catch (error) {
+            console.error("Error saving restaurant:", error);
+            alert('Operation failed.');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+    
+    return (
+        <div className="content-box">
+            <div className="content-box-header">
+                <button className="btn-back" onClick={onBack}><ArrowLeft size={16}/> Back to List</button>
+                <h2>{restaurantToEdit ? 'Edit Restaurant' : 'Add New Restaurant'}</h2>
+            </div>
+            <form className="product-form" onSubmit={handleSubmit}>
+                <div className="form-group"><label>Restaurant Name</label><input type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} required /></div>
+                
+                {/* --- Logo Upload --- */}
+                <div className="form-group"><label>Logo Image (Optional)</label><input type="file" onChange={e => setLogoFile(e.target.files[0])} /></div>
+                
+                {/* --- Cover Image Upload (NEW) --- */}
+                <div className="form-group"><label>Cover Image (Optional)</label><input type="file" onChange={e => setCoverImageFile(e.target.files[0])} /></div>
 
-                    {/* --- Charts --- */}
-                    <div className={styles.chartsGrid}>
-                        <div className={styles.chartBox}>
-                            <h3>Revenue Breakdown</h3>
-                            <ResponsiveContainer width="100%" height={300}>
-                                <PieChart>
-                                    <Pie dataKey="value" 
-                                         data={[{name: 'Food Value', value: reportData.totalFoodValue}, {name: 'Delivery Fees', value: reportData.totalDeliveryFees}]} 
-                                         cx="50%" cy="50%" 
-                                         outerRadius={100} 
-                                         label={(entry) => `Rs. ${entry.value.toFixed(0)}`}>
-                                        <Cell fill={COLORS[0]} />
-                                        <Cell fill={COLORS[1]} />
-                                    </Pie>
-                                    <Tooltip formatter={(value) => `Rs. ${value.toFixed(2)}`} />
-                                    <Legend />
-                                </PieChart>
-                            </ResponsiveContainer>
-                        </div>
-                        <div className={styles.chartBox}>
-                            <h3>Top 10 Selling Items</h3>
-                            <ResponsiveContainer width="100%" height={300}>
-                                <BarChart data={reportData.topItems} layout="vertical">
-                                    <CartesianGrid strokeDasharray="3 3" />
-                                    <XAxis type="number" />
-                                    <YAxis type="category" dataKey="name" width={120} />
-                                    <Tooltip />
-                                    <Bar dataKey="count" fill={COLORS[2]} name="Units Sold" />
-                                </BarChart>
-                            </ResponsiveContainer>
-                        </div>
-                    </div>
-                </div>
+                <div className="form-group"><label>Phone Number</label><input type="tel" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} /></div>
+                <div className="form-group"><label>Address (Short Text, e.g. "Malabe")</label><input type="text" value={formData.addressText} onChange={e => setFormData({...formData, addressText: e.target.value})} /></div>
+                <div className="form-group" style={{gridColumn: '1 / -1'}}><label>Description</label><textarea rows="3" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})}></textarea></div>
+                <div className="form-actions"><button type="submit" className="btn-primary" disabled={isSubmitting}>{isSubmitting ? 'Saving...' : 'Save Restaurant'}</button></div>
+            </form>
+        </div>
+    );
+};
+
+
+// ==========================================================
+// === Main Restaurants Page ===
+// ==========================================================
+export default function RestaurantsPage() {
+    const [view, setView] = useState('list');
+    const [restaurants, setRestaurants] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [restaurantToEdit, setRestaurantToEdit] = useState(null);
+    const [payoutModalOpen, setPayoutModalOpen] = useState(false);
+    const [selectedRestaurant, setSelectedRestaurant] = useState(null);
+
+    const fetchRestaurants = useCallback(() => {
+        setLoading(true);
+        // coverImage fetch kirima awashya nam { ..., coverImage } lesa daanna puluwan, 
+        // eth table eke pennanne nathi nisa logo eka pamanak athi.
+        client.fetch(`*[_type == "restaurant"]{_id, name, logo, phone, totalPayouts} | order(name asc)`).then(data => {
+            setRestaurants(data);
+            setLoading(false);
+        }).catch(console.error);
+    }, []);
+
+    useEffect(fetchRestaurants, [fetchRestaurants]);
+
+    const handleEdit = (restaurant) => {
+        setRestaurantToEdit(restaurant);
+        setView('form');
+    };
+    
+    const handleDelete = async (id) => {
+        if (window.confirm('Are you sure you want to delete this restaurant?')) {
+            await client.delete(id);
+            alert('Restaurant deleted.');
+            fetchRestaurants();
+        }
+    };
+
+    const handleOpenPayoutModal = (restaurant) => {
+        setSelectedRestaurant(restaurant);
+        setPayoutModalOpen(true);
+    };
+
+    if (loading) return <h2>Loading...</h2>;
+    if (view === 'form') return <RestaurantForm onBack={() => setView('list')} onSave={fetchRestaurants} restaurantToEdit={restaurantToEdit} />;
+
+    return (
+        <div className="content-box">
+            {payoutModalOpen && (
+                <PayoutModal
+                    restaurant={selectedRestaurant}
+                    onClose={() => setPayoutModalOpen(false)}
+                    onPayoutSuccess={fetchRestaurants}
+                />
             )}
+
+            <div className="content-box-header">
+                <h2>Restaurants</h2>
+                <button className="btn-primary" onClick={() => { setRestaurantToEdit(null); setView('form'); }}><PlusCircle size={16}/> Add New</button>
+            </div>
+            <div className="table-container">
+                <table className="data-table">
+                    <thead>
+                        <tr>
+                            <th>Logo</th>
+                            <th>Name</th>
+                            <th>Phone</th>
+                            <th>Total Paid Out</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {restaurants.map(r => (
+                            <tr key={r._id}>
+                                <td><img src={r.logo ? urlFor(r.logo).width(50).url() : 'https://placehold.co/50'} alt={r.name} className={styles.tableImage} /></td>
+                                <td>{r.name}</td>
+                                <td>{r.phone || 'N/A'}</td>
+                                <td>Rs. {r.totalPayouts?.toFixed(2) || '0.00'}</td>
+                                <td className="action-buttons">
+                                    <button 
+                                        className="btn-edit" 
+                                        style={{color: '#22C55E'}}
+                                        onClick={() => handleOpenPayoutModal(r)}>
+                                        <DollarSign size={14}/> Log Payout
+                                    </button>
+                                    <button className="btn-edit" onClick={() => handleEdit(r)}><Edit size={14}/> Edit</button>
+                                    <button className="btn-delete" onClick={() => handleDelete(r._id)}><Trash2 size={14}/> Delete</button>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
         </div>
     );
 }

@@ -83,6 +83,7 @@ const PayoutModal = ({ restaurant, onClose, onPayoutSuccess }) => {
 const RestaurantForm = ({ onBack, onSave, restaurantToEdit }) => {
     const [formData, setFormData] = useState({ name: '', description: '', phone: '', addressText: '' });
     const [logoFile, setLogoFile] = useState(null);
+    const [coverImageFile, setCoverImageFile] = useState(null); // --- NEW STATE FOR COVER IMAGE ---
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
@@ -100,10 +101,18 @@ const RestaurantForm = ({ onBack, onSave, restaurantToEdit }) => {
         e.preventDefault();
         setIsSubmitting(true);
         try {
+            // --- 1. Handle Logo Upload ---
             let logoAssetRef;
             if (logoFile) {
-                const uploadedAsset = await client.assets.upload('image', logoFile);
-                logoAssetRef = { _type: 'image', asset: { _type: 'reference', _ref: uploadedAsset._id } };
+                const uploadedLogo = await client.assets.upload('image', logoFile);
+                logoAssetRef = { _type: 'image', asset: { _type: 'reference', _ref: uploadedLogo._id } };
+            }
+
+            // --- 2. Handle Cover Image Upload (NEW) ---
+            let coverImageAssetRef;
+            if (coverImageFile) {
+                const uploadedCover = await client.assets.upload('image', coverImageFile);
+                coverImageAssetRef = { _type: 'image', asset: { _type: 'reference', _ref: uploadedCover._id } };
             }
             
             const doc = {
@@ -113,7 +122,10 @@ const RestaurantForm = ({ onBack, onSave, restaurantToEdit }) => {
                 phone: formData.phone,
                 addressText: formData.addressText,
                 slug: { _type: 'slug', current: formData.name.toLowerCase().replace(/\s+/g, '-') },
+                
+                // Add images only if new files were uploaded
                 ...(logoAssetRef && { logo: logoAssetRef }),
+                ...(coverImageAssetRef && { coverImage: coverImageAssetRef }),
             };
 
             if (restaurantToEdit) {
@@ -140,7 +152,13 @@ const RestaurantForm = ({ onBack, onSave, restaurantToEdit }) => {
             </div>
             <form className="product-form" onSubmit={handleSubmit}>
                 <div className="form-group"><label>Restaurant Name</label><input type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} required /></div>
+                
+                {/* --- Logo Upload --- */}
                 <div className="form-group"><label>Logo Image (Optional)</label><input type="file" onChange={e => setLogoFile(e.target.files[0])} /></div>
+                
+                {/* --- Cover Image Upload (NEW) --- */}
+                <div className="form-group"><label>Cover Image (Optional)</label><input type="file" onChange={e => setCoverImageFile(e.target.files[0])} /></div>
+
                 <div className="form-group"><label>Phone Number</label><input type="tel" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} /></div>
                 <div className="form-group"><label>Address (Short Text, e.g. "Malabe")</label><input type="text" value={formData.addressText} onChange={e => setFormData({...formData, addressText: e.target.value})} /></div>
                 <div className="form-group" style={{gridColumn: '1 / -1'}}><label>Description</label><textarea rows="3" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})}></textarea></div>
@@ -164,6 +182,8 @@ export default function RestaurantsPage() {
 
     const fetchRestaurants = useCallback(() => {
         setLoading(true);
+        // coverImage fetch kirima awashya nam { ..., coverImage } lesa daanna puluwan, 
+        // eth table eke pennanne nathi nisa logo eka pamanak athi.
         client.fetch(`*[_type == "restaurant"]{_id, name, logo, phone, totalPayouts} | order(name asc)`).then(data => {
             setRestaurants(data);
             setLoading(false);
@@ -209,7 +229,6 @@ export default function RestaurantsPage() {
             </div>
             <div className="table-container">
                 <table className="data-table">
-                    {/* === MEKA THAMAI WENAS KALE (Comments AIN KALA) === */}
                     <thead>
                         <tr>
                             <th>Logo</th>
@@ -219,7 +238,6 @@ export default function RestaurantsPage() {
                             <th>Actions</th>
                         </tr>
                     </thead>
-                    {/* ============================================== */}
                     <tbody>
                         {restaurants.map(r => (
                             <tr key={r._id}>
