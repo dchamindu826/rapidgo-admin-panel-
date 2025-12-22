@@ -39,7 +39,8 @@ const DashboardPage = () => {
         const fetchAllData = async () => {
             const parcelsQuery = `*[_type == "parcel"]{status, createdAt}`;
             const ordersQuery = `*[_type == "order"]{orderAmount, orderStatus, orderedAt, items}`;
-            const foodOrdersQuery = `*[_type == "foodOrder"]{grandTotal, deliveryCharge, orderStatus, createdAt}`;
+            // UPDATED: added foodTotal to the query to calculate 5% commission
+            const foodOrdersQuery = `*[_type == "foodOrder"]{grandTotal, deliveryCharge, foodTotal, orderStatus, createdAt}`;
             const deliveryOrdersQuery = `*[_type == "deliveryOrder"]{status, createdAt}`;
             try {
                 const [parcelsData, ordersData, foodOrdersData, deliveryOrdersData] = await Promise.all([
@@ -86,7 +87,12 @@ const DashboardPage = () => {
         const declinedDigitalOrders = filteredData.orders.filter(o => o.orderStatus === 'declined').length;
         const completedFoodOrders = filteredData.foodOrders.filter(o => o.orderStatus === 'completed');
         const foodIncome = completedFoodOrders.reduce((sum, o) => sum + (o.grandTotal || 0), 0);
-        const adminDeliveryIncome = completedFoodOrders.reduce((sum, o) => sum + (o.deliveryCharge || 0), 0);
+        
+        // UPDATED: Admin Profit calculation (35% from Delivery + 5% from Food)
+        const adminDeliveryIncome = completedFoodOrders.reduce((sum, o) => 
+            sum + ((o.deliveryCharge || 0) * 0.35) + ((o.foodTotal || 0) * 0.05), 0
+        );
+
         const pendingFoodOrders = filteredData.foodOrders.filter(o => ['pending', 'preparing', 'readyForPickup', 'assigned'].includes(o.orderStatus)).length;
         const completedDeliveryReqs = filteredData.deliveryOrders.filter(o => o.status === 'completed').length;
         const pendingDeliveryReqs = filteredData.deliveryOrders.filter(o => ['pending', 'assigned'].includes(o.status)).length;
@@ -150,7 +156,7 @@ const DashboardPage = () => {
                 </div></div>
                 
                 <div className={styles.summaryCard}><DollarSign color="#14B8A6"/><div>
-                    <span>Admin Delivery Income</span><strong>Rs. {stats.totalAdminDeliveryIncome.toFixed(2)}</strong>
+                    <span>Admin Net Profit </span><strong>Rs. {stats.totalAdminDeliveryIncome.toFixed(2)}</strong>
                 </div></div>
 
                 <div className={styles.summaryCard}><CheckCircle color="#22C55E"/><div>
